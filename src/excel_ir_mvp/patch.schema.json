@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Excel IR MVP Patch Schema",
+  "type": "object",
+  "required": ["actions"],
+  "properties": {
+    "name": {"type": "string"},
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["op"],
+        "properties": {
+          "op": {"type": "string"},
+          "sheet": {"type": "string"},
+          "sheet_index": {"type": "integer"},
+          "table": {"type": "string"},
+          "ref": {"type": "string"},
+          "coord": {"type": "string"},
+          "value": {},
+          "formula": {"type": "string"},
+          "where": {},
+          "updates": {"type": "object"},
+          "field_map": {"type": "object"},
+          "rows": {"type": "array"},
+          "values": {},
+          "formulas": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

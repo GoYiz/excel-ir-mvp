@@ -1,0 +1,2021 @@
+{
+  "schema_version": "0.7",
+  "workbook": {
+    "sheets": [
+      {
+        "name": "经营驾驶舱",
+        "dimensions": {
+          "max_row": 21,
+          "max_col": 12
+        },
+        "freeze_panes": "A8",
+        "merged_ranges": [
+          "C2:E2",
+          "A5:A6",
+          "A15:L15",
+          "F5:H5",
+          "C5:E5",
+          "A1:L1",
+          "K5:L5",
+          "I5:J5",
+          "F2:H2",
+          "I2:L2",
+          "B5:B6",
+          "A4:L4",
+          "A12:B12"
+        ],
+        "rows": {
+          "1": {
+            "height": 34.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "2": {
+            "height": 24.0,
+            "hidden": false,
+            "outlineLevel": 0
+          }
+        },
+        "cols": {
+          "A": {
+            "width": 14.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "B": {
+            "width": 14.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "C": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "D": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "E": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "F": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "G": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "H": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "I": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "J": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "K": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          },
+          "L": {
+            "width": 12.0,
+            "hidden": false,
+            "outlineLevel": 0
+          }
+        },
+        "cells": {
+          "A1": {
+            "row": 1,
+            "col": 1,
+            "value": "集团经营驾驶舱 - 月度经营分析",
+            "data_type": "s",
+            "style_id": "s0001"
+          },
+          "C2": {
+            "row": 2,
+            "col": 3,
+            "value": "期间：2026-05",
+            "data_type": "s",
+            "style_id": "s0002"
+          },
+          "F2": {
+            "row": 2,
+            "col": 6,
+            "value": "币种：人民币万元",
+            "data_type": "s",
+            "style_id": "s0002"
+          },
+          "I2": {
+            "row": 2,
+            "col": 9,
+            "value": "版本：V1.0 / 未审计",
+            "data_type": "s",
+            "style_id": "s0002"
+          },
+          "A4": {
+            "row": 4,
+            "col": 1,
+            "value": "一、核心 KPI",
+            "data_type": "s",
+            "style_id": "s0003"
+          },
+          "A5": {
+            "row": 5,
+            "col": 1,
+            "value": "业务线",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "B5": {
+            "row": 5,
+            "col": 2,
+            "value": "区域",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "C5": {
+            "row": 5,
+            "col": 3,
+            "value": "收入",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "F5": {
+            "row": 5,
+            "col": 6,
+            "value": "利润",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "I5": {
+            "row": 5,
+            "col": 9,
+            "value": "效率",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "K5": {
+            "row": 5,
+            "col": 11,
+            "value": "状态",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "C6": {
+            "row": 6,
+            "col": 3,
+            "value": "本月",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "D6": {
+            "row": 6,
+            "col": 4,
+            "value": "预算",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "E6": {
+            "row": 6,
+            "col": 5,
+            "value": "达成率",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "F6": {
+            "row": 6,
+            "col": 6,
+            "value": "本月",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "G6": {
+            "row": 6,
+            "col": 7,
+            "value": "预算",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "H6": {
+            "row": 6,
+            "col": 8,
+            "value": "达成率",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "I6": {
+            "row": 6,
+            "col": 9,
+            "value": "人效",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "J6": {
+            "row": 6,
+            "col": 10,
+            "value": "周转天数",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "K6": {
+            "row": 6,
+            "col": 11,
+            "value": "评级",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "L6": {
+            "row": 6,
+            "col": 12,
+            "value": "备注",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "A7": {
+            "row": 7,
+            "col": 1,
+            "value": "云业务",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B7": {
+            "row": 7,
+            "col": 2,
+            "value": "华东",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "C7": {
+            "row": 7,
+            "col": 3,
+            "value": 3200,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D7": {
+            "row": 7,
+            "col": 4,
+            "value": 3000,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E7": {
+            "row": 7,
+            "col": 5,
+            "value": "=C7/D7",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "F7": {
+            "row": 7,
+            "col": 6,
+            "value": 680,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "G7": {
+            "row": 7,
+            "col": 7,
+            "value": 650,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "H7": {
+            "row": 7,
+            "col": 8,
+            "value": "=F7/G7",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "I7": {
+            "row": 7,
+            "col": 9,
+            "value": 42.1,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "J7": {
+            "row": 7,
+            "col": 10,
+            "value": 31,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "K7": {
+            "row": 7,
+            "col": 11,
+            "value": "A",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "L7": {
+            "row": 7,
+            "col": 12,
+            "value": "增长稳健",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "A8": {
+            "row": 8,
+            "col": 1,
+            "value": "云业务",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B8": {
+            "row": 8,
+            "col": 2,
+            "value": "华南",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "C8": {
+            "row": 8,
+            "col": 3,
+            "value": 2800,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D8": {
+            "row": 8,
+            "col": 4,
+            "value": 3100,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E8": {
+            "row": 8,
+            "col": 5,
+            "value": "=C8/D8",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "F8": {
+            "row": 8,
+            "col": 6,
+            "value": 520,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "G8": {
+            "row": 8,
+            "col": 7,
+            "value": 600,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "H8": {
+            "row": 8,
+            "col": 8,
+            "value": "=F8/G8",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "I8": {
+            "row": 8,
+            "col": 9,
+            "value": 38.5,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "J8": {
+            "row": 8,
+            "col": 10,
+            "value": 35,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "K8": {
+            "row": 8,
+            "col": 11,
+            "value": "B",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "L8": {
+            "row": 8,
+            "col": 12,
+            "value": "需关注预算缺口",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "A9": {
+            "row": 9,
+            "col": 1,
+            "value": "软件",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B9": {
+            "row": 9,
+            "col": 2,
+            "value": "华东",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "C9": {
+            "row": 9,
+            "col": 3,
+            "value": 1900,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D9": {
+            "row": 9,
+            "col": 4,
+            "value": 1800,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E9": {
+            "row": 9,
+            "col": 5,
+            "value": "=C9/D9",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "F9": {
+            "row": 9,
+            "col": 6,
+            "value": 410,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "G9": {
+            "row": 9,
+            "col": 7,
+            "value": 390,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "H9": {
+            "row": 9,
+            "col": 8,
+            "value": "=F9/G9",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "I9": {
+            "row": 9,
+            "col": 9,
+            "value": 55,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "J9": {
+            "row": 9,
+            "col": 10,
+            "value": 22,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "K9": {
+            "row": 9,
+            "col": 11,
+            "value": "A",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "L9": {
+            "row": 9,
+            "col": 12,
+            "data_type": "inlineStr",
+            "style_id": "s0005",
+            "comment": {
+              "text": "该单元格用于记录特殊事项。",
+              "author": "Minis"
+            }
+          },
+          "A10": {
+            "row": 10,
+            "col": 1,
+            "value": "软件",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B10": {
+            "row": 10,
+            "col": 2,
+            "value": "华北",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "C10": {
+            "row": 10,
+            "col": 3,
+            "value": 1500,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D10": {
+            "row": 10,
+            "col": 4,
+            "value": 1700,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E10": {
+            "row": 10,
+            "col": 5,
+            "value": "=C10/D10",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "F10": {
+            "row": 10,
+            "col": 6,
+            "value": 260,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "G10": {
+            "row": 10,
+            "col": 7,
+            "value": 330,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "H10": {
+            "row": 10,
+            "col": 8,
+            "value": "=F10/G10",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "I10": {
+            "row": 10,
+            "col": 9,
+            "value": 46.8,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "J10": {
+            "row": 10,
+            "col": 10,
+            "value": 28,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "K10": {
+            "row": 10,
+            "col": 11,
+            "value": "C",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "L10": {
+            "row": 10,
+            "col": 12,
+            "value": "利润承压",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "A11": {
+            "row": 11,
+            "col": 1,
+            "value": "服务",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B11": {
+            "row": 11,
+            "col": 2,
+            "value": "西南",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "C11": {
+            "row": 11,
+            "col": 3,
+            "value": 900,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D11": {
+            "row": 11,
+            "col": 4,
+            "value": 850,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E11": {
+            "row": 11,
+            "col": 5,
+            "value": "=C11/D11",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "F11": {
+            "row": 11,
+            "col": 6,
+            "value": 180,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "G11": {
+            "row": 11,
+            "col": 7,
+            "value": 160,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "H11": {
+            "row": 11,
+            "col": 8,
+            "value": "=F11/G11",
+            "data_type": "f",
+            "style_id": "s0007"
+          },
+          "I11": {
+            "row": 11,
+            "col": 9,
+            "value": 33.2,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "J11": {
+            "row": 11,
+            "col": 10,
+            "value": 41,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "K11": {
+            "row": 11,
+            "col": 11,
+            "value": "B",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "L11": {
+            "row": 11,
+            "col": 12,
+            "data_type": "inlineStr",
+            "style_id": "s0005"
+          },
+          "A12": {
+            "row": 12,
+            "col": 1,
+            "value": "总计",
+            "data_type": "s",
+            "style_id": "s0008"
+          },
+          "C12": {
+            "row": 12,
+            "col": 3,
+            "value": "=SUM(C7:C11)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "D12": {
+            "row": 12,
+            "col": 4,
+            "value": "=SUM(D7:D11)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "E12": {
+            "row": 12,
+            "col": 5,
+            "value": "=C12/D12",
+            "data_type": "f",
+            "style_id": "s0010"
+          },
+          "F12": {
+            "row": 12,
+            "col": 6,
+            "value": "=SUM(F7:F11)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "G12": {
+            "row": 12,
+            "col": 7,
+            "value": "=SUM(G7:G11)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "H12": {
+            "row": 12,
+            "col": 8,
+            "value": "=F12/G12",
+            "data_type": "f",
+            "style_id": "s0010"
+          },
+          "I12": {
+            "row": 12,
+            "col": 9,
+            "value": "=SUM(I7:I11)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "J12": {
+            "row": 12,
+            "col": 10,
+            "value": "=SUM(J7:J11)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "K12": {
+            "row": 12,
+            "col": 11,
+            "data_type": "n",
+            "style_id": "s0011"
+          },
+          "L12": {
+            "row": 12,
+            "col": 12,
+            "data_type": "n",
+            "style_id": "s0011"
+          },
+          "A15": {
+            "row": 15,
+            "col": 1,
+            "value": "二、区域 × 业务线收入矩阵",
+            "data_type": "s",
+            "style_id": "s0003"
+          },
+          "A16": {
+            "row": 16,
+            "col": 1,
+            "value": "区域",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "B16": {
+            "row": 16,
+            "col": 2,
+            "value": "云业务",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "C16": {
+            "row": 16,
+            "col": 3,
+            "value": "软件",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "D16": {
+            "row": 16,
+            "col": 4,
+            "value": "服务",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "E16": {
+            "row": 16,
+            "col": 5,
+            "value": "合计",
+            "data_type": "s",
+            "style_id": "s0004"
+          },
+          "A17": {
+            "row": 17,
+            "col": 1,
+            "value": "华东",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B17": {
+            "row": 17,
+            "col": 2,
+            "value": 3200,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "C17": {
+            "row": 17,
+            "col": 3,
+            "value": 1900,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D17": {
+            "row": 17,
+            "col": 4,
+            "value": 0,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E17": {
+            "row": 17,
+            "col": 5,
+            "value": "=SUM(B17:D17)",
+            "data_type": "f",
+            "style_id": "s0012"
+          },
+          "A18": {
+            "row": 18,
+            "col": 1,
+            "value": "华南",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B18": {
+            "row": 18,
+            "col": 2,
+            "value": 2800,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "C18": {
+            "row": 18,
+            "col": 3,
+            "value": 0,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D18": {
+            "row": 18,
+            "col": 4,
+            "value": 0,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E18": {
+            "row": 18,
+            "col": 5,
+            "value": "=SUM(B18:D18)",
+            "data_type": "f",
+            "style_id": "s0012"
+          },
+          "A19": {
+            "row": 19,
+            "col": 1,
+            "value": "华北",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B19": {
+            "row": 19,
+            "col": 2,
+            "value": 0,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "C19": {
+            "row": 19,
+            "col": 3,
+            "value": 1500,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D19": {
+            "row": 19,
+            "col": 4,
+            "value": 0,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E19": {
+            "row": 19,
+            "col": 5,
+            "value": "=SUM(B19:D19)",
+            "data_type": "f",
+            "style_id": "s0012"
+          },
+          "A20": {
+            "row": 20,
+            "col": 1,
+            "value": "西南",
+            "data_type": "s",
+            "style_id": "s0005"
+          },
+          "B20": {
+            "row": 20,
+            "col": 2,
+            "value": 0,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "C20": {
+            "row": 20,
+            "col": 3,
+            "value": 0,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "D20": {
+            "row": 20,
+            "col": 4,
+            "value": 900,
+            "data_type": "n",
+            "style_id": "s0006"
+          },
+          "E20": {
+            "row": 20,
+            "col": 5,
+            "value": "=SUM(B20:D20)",
+            "data_type": "f",
+            "style_id": "s0012"
+          },
+          "A21": {
+            "row": 21,
+            "col": 1,
+            "value": "合计",
+            "data_type": "s",
+            "style_id": "s0008"
+          },
+          "B21": {
+            "row": 21,
+            "col": 2,
+            "value": "=SUM(B17:B20)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "C21": {
+            "row": 21,
+            "col": 3,
+            "value": "=SUM(C17:C20)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "D21": {
+            "row": 21,
+            "col": 4,
+            "value": "=SUM(D17:D20)",
+            "data_type": "f",
+            "style_id": "s0009"
+          },
+          "E21": {
+            "row": 21,
+            "col": 5,
+            "value": "=SUM(E17:E20)",
+            "data_type": "f",
+            "style_id": "s0009"
+          }
+        },
+        "logical": {
+          "regions": [
+            {
+              "type": "title",
+              "range": "A1:L1",
+              "text": "集团经营驾驶舱 - 月度经营分析",
+              "confidence": 0.99,
+              "evidence": {
+                "font_size": 20.0,
+                "bold": true,
+                "merged": true,
+                "horizontal": "center"
+              }
+            },
+            {
+              "type": "metadata_row",
+              "range": "A2:L2",
+              "items": [
+                {
+                  "coord": "C2",
+                  "text": "期间：2026-05"
+                },
+                {
+                  "coord": "F2",
+                  "text": "币种：人民币万元"
+                },
+                {
+                  "coord": "I2",
+                  "text": "版本：V1.0 / 未审计"
+                }
+              ],
+              "confidence": 0.65
+            },
+            {
+              "type": "table",
+              "range": "A5:L12",
+              "header_range": "A5:L6",
+              "body_range": "A7:L12",
+              "total_rows": [
+                12
+              ],
+              "metrics": {
+                "height": 8,
+                "width": 12,
+                "non_empty": 83,
+                "density": 0.865,
+                "border_density": 0.906,
+                "numeric_ratio": 0.361,
+                "component_range": "A4:L12"
+              },
+              "confidence": 0.98
+            },
+            {
+              "type": "table",
+              "range": "A16:E21",
+              "header_range": "A16:E16",
+              "body_range": "A17:E21",
+              "total_rows": [
+                16,
+                21
+              ],
+              "metrics": {
+                "height": 6,
+                "width": 5,
+                "non_empty": 30,
+                "density": 1.0,
+                "border_density": 0.867,
+                "numeric_ratio": 0.4,
+                "component_range": "A15:E21"
+              },
+              "confidence": 0.98
+            }
+          ]
+        },
+        "extra": {
+          "schema_version": "0.7",
+          "sheet_state": "visible",
+          "tab_color": {
+            "type": "rgb",
+            "rgb": "FF1F4E79"
+          },
+          "sheet_view": {
+            "showGridLines": false,
+            "zoomScale": 90
+          },
+          "sheet_format": {
+            "baseColWidth": 8,
+            "defaultRowHeight": 18.0
+          },
+          "page_margins": {
+            "left": 0.25,
+            "right": 0.25,
+            "top": 1.0,
+            "bottom": 1.0,
+            "header": 0.5,
+            "footer": 0.5
+          },
+          "page_setup": {
+            "orientation": "landscape",
+            "fitToHeight": 0,
+            "fitToWidth": 1
+          },
+          "print_area": "'经营驾驶舱'!$A$1:$L$24",
+          "print_title_rows": "$1:$7",
+          "header_footer": {
+            "oddHeader": {
+              "center": "&B经营驾驶舱&B"
+            },
+            "oddFooter": {
+              "right": "第 &P 页 / 共 &N 页"
+            }
+          },
+          "auto_filter": {
+            "ref": "A5:L12"
+          },
+          "data_validations": [
+            {
+              "type": "list",
+              "formula1": "\"A,B,C,D\"",
+              "allowBlank": false,
+              "showDropDown": false,
+              "showErrorMessage": true,
+              "showInputMessage": false,
+              "error": "只能选择 A/B/C/D",
+              "errorTitle": "评级错误",
+              "sqref": "K7:K11"
+            }
+          ],
+          "conditional_formatting": [
+            {
+              "sqref": "E7:E12",
+              "rules": [
+                {
+                  "type": "cellIs",
+                  "operator": "lessThan",
+                  "formula": [
+                    "0.9"
+                  ],
+                  "priority": 1,
+                  "dxf": {
+                    "font": {
+                      "name": "微软雅黑",
+                      "sz": 10.0,
+                      "b": true,
+                      "i": false,
+                      "color": {
+                        "type": "rgb",
+                        "rgb": "FFC00000"
+                      }
+                    },
+                    "fill": {
+                      "fill_type": "solid",
+                      "fgColor": {
+                        "type": "rgb",
+                        "rgb": "FFFCE4D6"
+                      },
+                      "bgColor": {
+                        "type": "rgb",
+                        "rgb": "00000000"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "sqref": "H7:H12",
+              "rules": [
+                {
+                  "type": "cellIs",
+                  "operator": "lessThan",
+                  "formula": [
+                    "0.9"
+                  ],
+                  "priority": 2,
+                  "dxf": {
+                    "font": {
+                      "name": "微软雅黑",
+                      "sz": 10.0,
+                      "b": true,
+                      "i": false,
+                      "color": {
+                        "type": "rgb",
+                        "rgb": "FFC00000"
+                      }
+                    },
+                    "fill": {
+                      "fill_type": "solid",
+                      "fgColor": {
+                        "type": "rgb",
+                        "rgb": "FFFCE4D6"
+                      },
+                      "bgColor": {
+                        "type": "rgb",
+                        "rgb": "00000000"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "tables": [
+            {
+              "displayName": "KPI_Table",
+              "name": "KPI_Table",
+              "ref": "A5:L12",
+              "headerRowCount": 1,
+              "style": {
+                "name": "TableStyleMedium2",
+                "showRowStripes": true
+              },
+              "ir": {
+                "header_rows": 2,
+                "field_map_candidates": {
+                  "业务线": "A",
+                  "区域": "B",
+                  "收入/本月": "C",
+                  "本月": "C",
+                  "收入/预算": "D",
+                  "预算": "D",
+                  "收入/达成率": "E",
+                  "达成率": "E",
+                  "利润/本月": "F",
+                  "利润/预算": "G",
+                  "利润/达成率": "H",
+                  "效率/人效": "I",
+                  "人效": "I",
+                  "效率/周转天数": "J",
+                  "周转天数": "J",
+                  "状态/评级": "K",
+                  "评级": "K",
+                  "状态/备注": "L",
+                  "备注": "L"
+                },
+                "confidence": {
+                  "业务线": 0.9,
+                  "区域": 0.9,
+                  "收入/本月": 0.9,
+                  "本月": 0.72,
+                  "收入/预算": 0.9,
+                  "预算": 0.72,
+                  "收入/达成率": 0.9,
+                  "达成率": 0.72,
+                  "利润/本月": 0.9,
+                  "利润/预算": 0.9,
+                  "利润/达成率": 0.9,
+                  "效率/人效": 0.9,
+                  "人效": 0.72,
+                  "效率/周转天数": 0.9,
+                  "周转天数": 0.72,
+                  "状态/评级": 0.9,
+                  "评级": 0.72,
+                  "状态/备注": 0.9,
+                  "备注": 0.72
+                }
+              }
+            }
+          ],
+          "images": [
+            {
+              "name": "image1",
+              "format": "png",
+              "width": 140,
+              "height": 42,
+              "anchor": {
+                "type": "OneCellAnchor",
+                "from": {
+                  "row": 1,
+                  "col": 0,
+                  "rowOff": 0,
+                  "colOff": 0,
+                  "cell": "A2"
+                },
+                "ext": {
+                  "cx": 1333500,
+                  "cy": 400050
+                }
+              },
+              "anchor_cell": "A2",
+              "sha256": "fa7353abc04f286ec0943c6911d825082e71e0d9416224c420cfa5505b07b2ed",
+              "data_b64": "iVBORw0KGgoAAAANSUhEUgAAAIwAAAAqCAIAAADu5ySaAAAEMklEQVR4nO2ce0xTVxzHf6f3VhAmziFCEVZrKRbSIAwZwkK3QUpAI5uCjxkylr0kcZFlzjhcIJlGF4hbGvckk4liIgthzE0kzEdEtJMh1LoCpYXyUHls1WBDpfRB98eN9YZ2PGqy9iTn89fpL9/7O7f95Jyb9rZF/JxiIPg2HG+fAGFuiCQMIJIwgGY/GDh7xFvnQXBl1WsHmAFZSRhAu5acAgneYsaWRlYSBhBJGEAkYQCRhAFEEgYQSRhAJGEAkYQBbt7Mzp8dsqRDhTkp75QZxicA4I3MpPzsZNPklMlsOfDtLyOGhwDQU3vwYlv37vIzzCHyj7Zlp0jWbC0FAE3tZyrtXaZ+4c/u42evMWOmjhAELvY7WNnQqu53TTIVBzhoijpU2aDS3d2akViwMcVqs3Np6sQ5Rd3lDtdWzz4T8PamVABYF8u/2TUIACcb/jivUD/Ni/A/8FSSMl4Un/hN8WrimtpL7WnxUTnStbn7K8wW6yuJ0V8U5e0sqQQAi80mXBlCcTj26WmEED8s2GKzMYdbbfbtn/7g2tZZF/PD5Hu3Ze055ppkZ8r35B49/ft22bqdJceNJnNQoP+PJQVj943XVL2urZpudALAX2dK3U7tm3i+3S324wb4Laq50JaRJAaA919PK69uMlusAHClXTs4+oCmKCap7huOE60EgFgBr3tgZP5T9AyNhQUvnT2jGRyNDF22a7P0SFWj0WQGAKPJ/HlVY2GudKGtfBbPJUkTopuVWv09Q8SKZVyaEj0f2ql/IqD4m3qb3c6Mm5XalxOiAUCaILqq1M1/irT4KMXtvtkzL60VdulHoiJDOvXDzqJaPyyKXLHQVj6L59tdZnJMrIC3IVUS+tyS9RIBxUH/lWxR6t7csF5ecyk1TljdeMNZ59LUT4ffY8Zl1U0dmiF2naYpYUSI7AO52yRTQQiMj6b2f/1zXdku9owIkMPhvhWOeCiJ4nAE4cuzP/wKAKQJovQkcf+wIVbAu6W9AwAIoaNFeXvltUx4fGLS4XDwli8FgIlHU84mc16TCrdI89Jf+K6ueZZrEoPuzt+S1eHtjzVLhOG6oTG3rTx7vt7Fw+0uMYbvvLq0dQ1I40Wnzrd+nC9bxKUBYFNanB+XYuevdOj25WdeV/UuaJaWW73x0RHzSVbUtxS/lb0kwB8AggL9PynI+r7+qmetfBAPV1Jmcozitp4ZT05Z7z+c0AyMtqr7z325+4HRZBg3lVb8ys5fvqnZly/LKjrGLrI3sY6eobJTTTNm0d/7R7yKx0FozmSLUscLDqo5/K7FaufSVFWD4rqqz22raWYfxArE/koXc6+J3PTzOjNEkE8cMIBIwgAiCQOIJAwgkjCASMIAIgkDiCQMIJIwgEjCACIJA4gkDCCSMMDNrQryUzJfg6wkDEDkLwJ8H7KSMIBIwoB/AQcJuMfCCmQvAAAAAElFTkSuQmCC"
+            }
+          ],
+          "charts": [
+            {
+              "name": "chart1",
+              "type": "BarChart",
+              "anchor": "G16",
+              "anchor_cell": "G16",
+              "title": "收入矩阵",
+              "x_axis_title": "区域",
+              "y_axis_title": "万元",
+              "height": 7.5,
+              "width": 15,
+              "series": [
+                {
+                  "title_ref": "'经营驾驶舱'!B16",
+                  "title": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "B16:B16",
+                    "min_col": 2,
+                    "min_row": 16,
+                    "max_col": 2,
+                    "max_row": 16,
+                    "formula": "'经营驾驶舱'!B16"
+                  },
+                  "values": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "B17:B20",
+                    "min_col": 2,
+                    "min_row": 17,
+                    "max_col": 2,
+                    "max_row": 20,
+                    "formula": "'经营驾驶舱'!$B$17:$B$20"
+                  },
+                  "categories": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "A17:A20",
+                    "min_col": 1,
+                    "min_row": 17,
+                    "max_col": 1,
+                    "max_row": 20,
+                    "formula": "'经营驾驶舱'!$A$17:$A$20"
+                  }
+                },
+                {
+                  "title_ref": "'经营驾驶舱'!C16",
+                  "title": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "C16:C16",
+                    "min_col": 3,
+                    "min_row": 16,
+                    "max_col": 3,
+                    "max_row": 16,
+                    "formula": "'经营驾驶舱'!C16"
+                  },
+                  "values": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "C17:C20",
+                    "min_col": 3,
+                    "min_row": 17,
+                    "max_col": 3,
+                    "max_row": 20,
+                    "formula": "'经营驾驶舱'!$C$17:$C$20"
+                  },
+                  "categories": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "A17:A20",
+                    "min_col": 1,
+                    "min_row": 17,
+                    "max_col": 1,
+                    "max_row": 20,
+                    "formula": "'经营驾驶舱'!$A$17:$A$20"
+                  }
+                },
+                {
+                  "title_ref": "'经营驾驶舱'!D16",
+                  "title": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "D16:D16",
+                    "min_col": 4,
+                    "min_row": 16,
+                    "max_col": 4,
+                    "max_row": 16,
+                    "formula": "'经营驾驶舱'!D16"
+                  },
+                  "values": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "D17:D20",
+                    "min_col": 4,
+                    "min_row": 17,
+                    "max_col": 4,
+                    "max_row": 20,
+                    "formula": "'经营驾驶舱'!$D$17:$D$20"
+                  },
+                  "categories": {
+                    "sheet": "经营驾驶舱",
+                    "ref": "A17:A20",
+                    "min_col": 1,
+                    "min_row": 17,
+                    "max_col": 1,
+                    "max_row": 20,
+                    "formula": "'经营驾驶舱'!$A$17:$A$20"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "styles": {
+      "s0001": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 20.0,
+          "b": true,
+          "i": false,
+          "color": {
+            "type": "rgb",
+            "rgb": "FFFFFFFF"
+          }
+        },
+        "fill": {
+          "fill_type": "solid",
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "FF1F4E79"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "center",
+          "vertical": "center",
+          "text_rotation": 0,
+          "wrap_text": true,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0002": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 9.0,
+          "b": false,
+          "i": false,
+          "color": {
+            "type": "rgb",
+            "rgb": "FF666666"
+          }
+        },
+        "fill": {
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "center",
+          "vertical": "center",
+          "text_rotation": 0,
+          "wrap_text": true,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0003": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 13.0,
+          "b": true,
+          "i": false,
+          "color": {
+            "type": "rgb",
+            "rgb": "FF1F4E79"
+          }
+        },
+        "fill": {
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "text_rotation": 0,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0004": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": true,
+          "i": false,
+          "color": {
+            "type": "rgb",
+            "rgb": "FFFFFFFF"
+          }
+        },
+        "fill": {
+          "fill_type": "solid",
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "FF1F4E79"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "center",
+          "vertical": "center",
+          "text_rotation": 0,
+          "wrap_text": true,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0005": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": false,
+          "i": false
+        },
+        "fill": {
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "center",
+          "vertical": "center",
+          "text_rotation": 0,
+          "wrap_text": true,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0006": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": false,
+          "i": false
+        },
+        "fill": {
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "right",
+          "vertical": "center",
+          "text_rotation": 0,
+          "indent": 0.0
+        },
+        "number_format": "#,##0.0",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0007": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": false,
+          "i": false
+        },
+        "fill": {
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "right",
+          "vertical": "center",
+          "text_rotation": 0,
+          "indent": 0.0
+        },
+        "number_format": "0.0%",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0008": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": true,
+          "i": false
+        },
+        "fill": {
+          "fill_type": "solid",
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "FFE2F0D9"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "medium",
+            "color": {
+              "type": "rgb",
+              "rgb": "FF1F4E79"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "center",
+          "vertical": "center",
+          "text_rotation": 0,
+          "wrap_text": true,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0009": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": true,
+          "i": false
+        },
+        "fill": {
+          "fill_type": "solid",
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "FFE2F0D9"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "medium",
+            "color": {
+              "type": "rgb",
+              "rgb": "FF1F4E79"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "right",
+          "vertical": "center",
+          "text_rotation": 0,
+          "indent": 0.0
+        },
+        "number_format": "#,##0.0",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0010": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": true,
+          "i": false
+        },
+        "fill": {
+          "fill_type": "solid",
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "FFE2F0D9"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "medium",
+            "color": {
+              "type": "rgb",
+              "rgb": "FF1F4E79"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "right",
+          "vertical": "center",
+          "text_rotation": 0,
+          "indent": 0.0
+        },
+        "number_format": "0.0%",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0011": {
+        "font": {
+          "name": "微软雅黑",
+          "sz": 10.0,
+          "b": true,
+          "i": false
+        },
+        "fill": {
+          "fill_type": "solid",
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "FFE2F0D9"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "left": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "right": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "top": {
+            "style": "medium",
+            "color": {
+              "type": "rgb",
+              "rgb": "FF1F4E79"
+            }
+          },
+          "bottom": {
+            "style": "thin",
+            "color": {
+              "type": "rgb",
+              "rgb": "FFBFBFBF"
+            }
+          },
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "horizontal": "right",
+          "vertical": "center",
+          "text_rotation": 0,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      },
+      "s0012": {
+        "font": {
+          "name": "Calibri",
+          "sz": 11.0,
+          "b": false,
+          "i": false,
+          "color": {
+            "type": "theme",
+            "theme": 1
+          },
+          "family": 2.0,
+          "scheme": "minor"
+        },
+        "fill": {
+          "fill_type": "solid",
+          "fgColor": {
+            "type": "rgb",
+            "rgb": "FFF2F2F2"
+          },
+          "bgColor": {
+            "type": "rgb",
+            "rgb": "00000000"
+          }
+        },
+        "border": {
+          "diagonalUp": false,
+          "diagonalDown": false,
+          "outline": true
+        },
+        "alignment": {
+          "text_rotation": 0,
+          "indent": 0.0
+        },
+        "number_format": "General",
+        "protection": {
+          "locked": true,
+          "hidden": false
+        }
+      }
+    }
+  }
+}

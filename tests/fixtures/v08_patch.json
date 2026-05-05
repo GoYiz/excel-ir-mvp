@@ -1,0 +1,59 @@
+{
+  "name": "v0.8_confirm_candidates_and_audit",
+  "actions": [
+    {
+      "op": "confirm_field_map",
+      "sheet": "经营驾驶舱",
+      "table": "KPI_Table",
+      "header_rows": 2,
+      "field_map": {
+        "本月收入": "C",
+        "预算收入": "D",
+        "收入达成率": "E",
+        "本月利润": "F",
+        "预算利润": "G",
+        "利润达成率": "H",
+        "评级": "K",
+        "备注": "L"
+      }
+    },
+    {
+      "op": "append_table_rows",
+      "sheet": "经营驾驶舱",
+      "table": "KPI_Table",
+      "copy_style_from_row": 11,
+      "rows": [
+        ["硬件", "华中", 760, 700, "=C12/D12", 120, 130, "=F12/G12", 28.5, 45, "B", "v0.8 候选确认后追加"],
+        ["订阅", "华东", 1880, 1700, "=C13/D13", 410, 360, "=F13/G13", 61.2, 18, "A", "v0.8 审计报告"]
+      ]
+    },
+    {
+      "op": "update_rows_where",
+      "sheet": "经营驾驶舱",
+      "table": "KPI_Table",
+      "header_rows": 2,
+      "where": {"all": [{"col": "区域", "op": "in", "value": ["华南", "华北"]}, {"not": {"col": "评级", "op": "eq", "value": "A"}}]},
+      "updates": {"备注": "v0.8 action diff 归因"}
+    },
+    {
+      "op": "delete_rows_where",
+      "sheet": "经营驾驶舱",
+      "table": "KPI_Table",
+      "header_rows": 2,
+      "where": {"col": "业务线", "op": "eq", "value": "服务"}
+    },
+    {
+      "op": "recompute_totals",
+      "sheet": "经营驾驶舱",
+      "table": "KPI_Table",
+      "header_rows": 2,
+      "formulas": {"本月收入": "SUM", "预算收入": "SUM", "收入达成率": "=C{row}/D{row}", "本月利润": "SUM", "预算利润": "SUM", "利润达成率": "=F{row}/G{row}", "I": "SUM", "J": "SUM"}
+    },
+    {
+      "op": "set_chart_title",
+      "sheet": "经营驾驶舱",
+      "chart": "chart1",
+      "title": "收入矩阵（v0.8 审计）"
+    }
+  ]
+}

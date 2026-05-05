@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Generated workbooks / reports / scratch outputs
+*.xlsx
+*.xlsm
+*.xls
+*.html
+*.png
+*.json
+!src/excel_ir_mvp/*.json
+!src/excel_ir_mvp/*.schema.json
+!tests/fixtures/*.json
+!tests/fixtures/**/*.json
+!tests/fixtures/*.xlsx
+!tests/fixtures/**/*.xlsx
+
+# Local generated result directories
+corpus_results/
+corpus_results_api/
+
+# Local editor / OS
+.DS_Store
+.idea/
+.vscode/

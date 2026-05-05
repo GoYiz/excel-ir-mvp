@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Excel IR MVP Workbook IR Schema",
+  "type": "object",
+  "required": ["schema_version", "workbook"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "workbook": {
+      "type": "object",
+      "required": ["sheets", "styles"],
+      "properties": {
+        "styles": {"type": "object"},
+        "patch_history": {"type": "array"},
+        "semantic_metadata": {
+          "type": "object",
+          "properties": {
+            "kind": {"const": "excel_ir_semantic_metadata"},
+            "version": {"type": "string"},
+            "checksum": {"type": "string"},
+            "sheets": {"type": "array"}
+          },
+          "additionalProperties": true
+        },
+        "sheets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "dimensions", "cells"],
+            "properties": {
+              "name": {"type": "string"},
+              "dimensions": {"type": "object"},
+              "cells": {"type": "object"},
+              "merged_ranges": {"type": "array"},
+              "rows": {"type": "object"},
+              "cols": {"type": "object"},
+              "logical": {"type": "object"},
+              "extra": {
+                "type": "object",
+                "properties": {
+                  "tables": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "table_kind": {"enum": ["native", "semantic"]}
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

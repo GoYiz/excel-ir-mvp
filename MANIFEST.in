@@ -1,0 +1,7 @@
+include README.md
+include CLI_REFERENCE.md
+include ARCHITECTURE.md
+include LICENSE
+recursive-include src/excel_ir_mvp *.json *.schema.json
+recursive-include tests *.py
+recursive-include tests/fixtures *

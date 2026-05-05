@@ -1,0 +1,27 @@
+name: Excel IR MVP CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip build twine coverage
+      - run: pip install -e .
+      - run: python ci_check.py
+      - run: python -m unittest -v tests.test_excel_ir_mvp tests.test_patch_ops tests.test_native_tables tests.test_metadata
+      - run: python -m coverage erase
+      - run: python -m coverage run --parallel-mode --source=src/excel_ir_mvp -m unittest tests.test_excel_ir_mvp tests.test_patch_ops
+      - run: python -m coverage run --parallel-mode --source=src/excel_ir_mvp -m unittest tests.test_native_tables tests.test_metadata
+      - run: python -m coverage combine
+      - run: python -m coverage report --show-missing --fail-under=65
+      - run: python -m build --sdist --wheel
+      - run: python -m twine check dist/*
+      - run: pip install --force-reinstall dist/*.whl
+      - run: python ci_check.py --installed

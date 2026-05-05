@@ -1,0 +1,14 @@
+{
+  "output_dir": "corpus_results",
+  "samples": [
+    {
+      "name": "base_complex",
+      "xlsx": "tests/fixtures/complex_report.xlsx",
+      "patch": "tests/fixtures/v08_patch.json"
+    },
+    {
+      "name": "v08_patched_roundtrip",
+      "xlsx": "tests/fixtures/v08_patched_report.xlsx"
+    }
+  ]
+}
