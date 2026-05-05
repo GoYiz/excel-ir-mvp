@@ -6,6 +6,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -836,6 +837,79 @@ def verify_semantic_metadata_xlsx(path: str) -> Dict[str, Any]:
     return result
 
 
+def metadata_status_xlsx(path: str) -> Dict[str, Any]:
+    """Return hidden metadata carrier status without mutating the workbook."""
+    wb = load_workbook(path, data_only=False)
+    raw_present = METADATA_SHEET_NAME in wb.sheetnames
+    raw = None
+    sheet_state = None
+    if raw_present:
+        ws = wb[METADATA_SHEET_NAME]
+        sheet_state = ws.sheet_state
+        raw = ws[METADATA_CELL].value
+    metadata = read_semantic_metadata_sheet(wb)
+    parsed = bool(metadata)
+    result = {
+        "ok": True,
+        "path": path,
+        "present": raw_present,
+        "parsed": parsed,
+        "sheet_state": sheet_state,
+        "raw_bytes": len(raw.encode("utf-8")) if isinstance(raw, str) else 0,
+        "checksum_ok": bool(metadata and verify_metadata_checksum(metadata)),
+        "tables": sum(len(s.get("tables", [])) for s in metadata.get("sheets", [])) if metadata else 0,
+    }
+    if raw_present and not parsed:
+        result["warning"] = "metadata sheet exists but payload is missing, invalid, or checksum-mismatched"
+    return _strip_none(result)
+
+
+def _anon_text(value: str, keep_formulas: bool = True) -> str:
+    if keep_formulas and value.startswith("="):
+        return value
+    if re.fullmatch(r"[\w.+-]+@[\w.-]+", value):
+        return "user@example.com"
+    if re.fullmatch(r"\d{6,}", value):
+        return "000000"
+    # Preserve common structural labels that help table detection.
+    keep = {"合计", "小计", "总计", "累计", "日期", "部门", "区域", "产品", "项目", "负责人", "评级"}
+    if value in keep:
+        return value
+    return f"文本{len(value)}"
+
+
+def anonymize_workbook_xlsx(src_path: str, out_path: str, keep_formulas: bool = True) -> Dict[str, Any]:
+    """Create a shareable workbook by replacing literal cell values.
+
+    Styles, merges, dimensions, formulas (by default), validations, charts and
+    other workbook structure are preserved as much as openpyxl allows. Hidden
+    semantic metadata is stripped because it may contain source field labels.
+    """
+    wb = load_workbook(src_path, data_only=False)
+    if METADATA_SHEET_NAME in wb.sheetnames:
+        del wb[METADATA_SHEET_NAME]
+    changed = 0
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                value = cell.value
+                if value is None:
+                    continue
+                if isinstance(value, bool):
+                    continue
+                if isinstance(value, (int, float)):
+                    if not (isinstance(value, int) and value in (0, 1)):
+                        cell.value = 0
+                        changed += 1
+                elif isinstance(value, str):
+                    new_value = _anon_text(value, keep_formulas=keep_formulas)
+                    if new_value != value:
+                        cell.value = new_value
+                        changed += 1
+    wb.save(out_path)
+    return {"ok": True, "source": src_path, "output": out_path, "cells_changed": changed, "metadata_stripped": True}
+
+
 def strip_semantic_metadata_xlsx(src_path: str, out_path: str) -> Dict[str, Any]:
     """Copy an XLSX while removing the hidden semantic metadata carrier sheet."""
     wb = load_workbook(src_path, data_only=False)
@@ -1110,9 +1184,18 @@ def canonical_for_diff(ir: Dict[str, Any]) -> Dict[str, Any]:
     return _normalize_ir_for_diff(data)
 
 
-def compare_ir(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
+def compare_ir(a: Dict[str, Any], b: Dict[str, Any], mode: str = "full") -> Dict[str, Any]:
+    if mode not in {"full", "semantic", "structural"}:
+        raise ValueError("mode must be full, semantic, or structural")
+    if mode == "semantic":
+        return semantic_metadata_diff(collect_semantic_metadata(a), collect_semantic_metadata(b))
     ia = canonical_for_diff(a)
     ib = canonical_for_diff(b)
+    if mode == "structural":
+        for data in (ia, ib):
+            for sheet in data.get("workbook", {}).get("sheets", []) or []:
+                extra = sheet.get("extra", {}) or {}
+                extra.pop("tables", None)
     if ia == ib:
         return {"ok": True, "diff_count": 0, "diffs": [], "truncated": False}
     diffs: List[Dict[str, Any]] = []
@@ -1141,8 +1224,8 @@ def compare_ir(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
     return {"ok": not diffs, "diff_count": len(diffs), "diffs": diffs[:200], "truncated": len(diffs) > 200}
 
 
-def compare_ir_files(a_path: str, b_path: str) -> Dict[str, Any]:
-    return compare_ir(load_json(a_path), load_json(b_path))
+def compare_ir_files(a_path: str, b_path: str, mode: str = "full") -> Dict[str, Any]:
+    return compare_ir(load_json(a_path), load_json(b_path), mode=mode)
 
 
 def diff_workbooks_plus(a: str, b: str) -> Dict[str, Any]:

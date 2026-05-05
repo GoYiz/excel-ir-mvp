@@ -7,7 +7,7 @@ Python prototype for parsing complex human-authored Excel reports into an abstra
 
 Repository: https://github.com/GoYiz/excel-ir-mvp
 
-Current prerelease: **2.0.0a9**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
+Current prerelease: **2.0.0a10**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
 
 ## Install
 
@@ -28,20 +28,20 @@ excel-ir diff tests/fixtures/complex_report.xlsx rebuilt.xlsx diff.json
 excel-ir compare-ir out.ir.json out.ir.json ir_diff.json
 ```
 
-## Semantic metadata
+## Useful commands
 
 ```bash
-excel-ir metadata export out.ir.json metadata.json
-excel-ir metadata import stripped.ir.json metadata.json restored.ir.json
-excel-ir metadata extract metadata.json --from-xlsx rebuilt.xlsx
-excel-ir metadata verify metadata.json
-excel-ir metadata verify --from-xlsx rebuilt.xlsx
-excel-ir metadata repair repaired.xlsx --from-xlsx workbook.xlsx
-excel-ir metadata strip stripped.xlsx --from-xlsx workbook.xlsx
-excel-ir metadata diff a.metadata.json b.metadata.json metadata_diff.json
+excel-ir anonymize private.xlsx anonymized.xlsx
+excel-ir metadata status workbook.xlsx
+excel-ir compare-ir --semantic-only a.ir.json b.ir.json semantic_diff.json
+excel-ir compare-ir --structural-only a.ir.json b.ir.json structural_diff.json
 ```
 
-Semantic table metadata is stored in a `veryHidden` sheet named `_excel_ir_metadata` with a SHA-256 checksum. See [Native vs Semantic Tables](docs/native-vs-semantic-tables.md).
+## Docs
+
+- [Native vs Semantic Tables](docs/native-vs-semantic-tables.md)
+- [Metadata Commands](docs/metadata.md)
+- [Anonymization](docs/anonymization.md)
 
 ## Corpus
 
@@ -52,8 +52,6 @@ excel-ir corpus report corpus_results/summary.json corpus_results/report.html
 ```
 
 Current categories: `synthetic_complex`, `metadata_roundtrip`, `native_table`, `semantic_table`.
-
-CI writes `corpus_results/summary.json`, `corpus_results/report.html`, and `ci_inspect.json`; GitHub Actions uploads them as a `corpus-report` artifact.
 
 ## Development checks
 

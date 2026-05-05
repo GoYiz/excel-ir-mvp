@@ -32,6 +32,13 @@ def main():
 
     p = sub.add_parser('compare-ir')
     p.add_argument('a_ir'); p.add_argument('b_ir'); p.add_argument('diff_json', nargs='?')
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument('--semantic-only', action='store_true')
+    mode.add_argument('--structural-only', action='store_true')
+
+    p = sub.add_parser('anonymize')
+    p.add_argument('xlsx'); p.add_argument('out_xlsx')
+    p.add_argument('--rewrite-formulas', action='store_true')
 
     p = sub.add_parser('inspect')
     p.add_argument('xlsx'); p.add_argument('--out')
@@ -77,6 +84,8 @@ def main():
     p = meta_sub.add_parser('strip')
     p.add_argument('out_xlsx')
     p.add_argument('--from-xlsx', dest='from_xlsx', required=True)
+    p = meta_sub.add_parser('status')
+    p.add_argument('xlsx')
     p = meta_sub.add_parser('diff')
     p.add_argument('a_metadata_json'); p.add_argument('b_metadata_json'); p.add_argument('diff_json', nargs='?')
     p = meta_sub.add_parser('verify')
@@ -98,12 +107,16 @@ def main():
         excel_ir_plus.save_json(d, args.diff_json)
         print(json.dumps(d, ensure_ascii=False, indent=2))
     elif args.cmd == 'compare-ir':
-        d = excel_ir_plus.compare_ir_files(args.a_ir, args.b_ir)
+        mode = 'semantic' if args.semantic_only else 'structural' if args.structural_only else 'full'
+        d = excel_ir_plus.compare_ir_files(args.a_ir, args.b_ir, mode=mode)
         if args.diff_json:
             excel_ir_plus.save_json(d, args.diff_json)
         print(json.dumps(d, ensure_ascii=False, indent=2))
         if not d.get('ok'):
             raise SystemExit(1)
+    elif args.cmd == 'anonymize':
+        result = excel_ir_plus.anonymize_workbook_xlsx(args.xlsx, args.out_xlsx, keep_formulas=not args.rewrite_formulas)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.cmd == 'inspect':
         result = excel_ir_plus.inspect_workbook(args.xlsx)
         if args.out:
@@ -183,6 +196,8 @@ def main():
             print(json.dumps(result, ensure_ascii=False, indent=2))
             if not result.get('ok'):
                 raise SystemExit(1)
+        elif args.metadata_cmd == 'status':
+            print(json.dumps(excel_ir_plus.metadata_status_xlsx(args.xlsx), ensure_ascii=False, indent=2))
         elif args.metadata_cmd == 'diff':
             d = excel_ir_plus.semantic_metadata_diff_files(args.a_metadata_json, args.b_metadata_json)
             if args.diff_json:

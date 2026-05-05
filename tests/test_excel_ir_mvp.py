@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a9')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a10')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
@@ -269,6 +269,38 @@ class ExcelIRMVPTests(unittest.TestCase):
                 pkg_bench.run = old_run
         finally:
             sys.argv = saved_argv
+    def test_alpha10_anonymize_status_and_compare_modes(self):
+        from excel_ir_mvp.excel_ir_plus import anonymize_workbook_xlsx, metadata_status_xlsx, parse_workbook_plus, rebuild_workbook_plus, compare_ir_files
+        ir = parse_workbook_plus(str(fixture_path('complex_report.xlsx')))
+        rebuilt = ROOT / 'alpha10_rebuilt.xlsx'
+        rebuild_workbook_plus(ir, str(rebuilt))
+        status = metadata_status_xlsx(str(rebuilt))
+        self.assertTrue(status['present'])
+        self.assertTrue(status['checksum_ok'])
+        anon = ROOT / 'alpha10_anonymized.xlsx'
+        result = anonymize_workbook_xlsx(str(rebuilt), str(anon))
+        self.assertTrue(result['ok'])
+        self.assertGreater(result['cells_changed'], 0)
+        self.assertFalse(metadata_status_xlsx(str(anon))['present'])
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'status', str(rebuilt)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertTrue(json.loads(p.stdout)['present'])
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'anonymize', str(fixture_path('complex_report.xlsx')), str(ROOT / 'alpha10_cli_anon.xlsx')], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        ir_a = ROOT / 'alpha10_a.ir.json'
+        ir_b = ROOT / 'alpha10_b.ir.json'
+        ir2 = json.loads(json.dumps(ir, ensure_ascii=False))
+        ir2['workbook']['sheets'][0]['extra']['tables'][0]['table_kind'] = 'native'
+        ir_a.write_text(json.dumps(ir, ensure_ascii=False), encoding='utf-8')
+        ir_b.write_text(json.dumps(ir2, ensure_ascii=False), encoding='utf-8')
+        self.assertFalse(compare_ir_files(str(ir_a), str(ir_b), mode='semantic')['ok'])
+        self.assertTrue(compare_ir_files(str(ir_a), str(ir_b), mode='structural')['ok'])
+        with self.assertRaises(ValueError):
+            compare_ir_files(str(ir_a), str(ir_b), mode='bad')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'compare-ir', '--semantic-only', str(ir_a), str(ir_b)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertNotEqual(p.returncode, 0)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'compare-ir', '--structural-only', str(ir_a), str(ir_b)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
 
 
 if __name__ == '__main__':

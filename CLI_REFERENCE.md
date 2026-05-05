@@ -9,10 +9,14 @@ excel-ir bench
 
 ```bash
 excel-ir inspect workbook.xlsx --out inspect.json
+excel-ir anonymize workbook.xlsx anonymized.xlsx
+excel-ir anonymize workbook.xlsx anonymized.xlsx --rewrite-formulas
 excel-ir parse workbook.xlsx out.ir.json
 excel-ir rebuild out.ir.json rebuilt.xlsx
 excel-ir diff original.xlsx rebuilt.xlsx diff.json
 excel-ir compare-ir a.ir.json b.ir.json ir_diff.json
+excel-ir compare-ir --semantic-only a.ir.json b.ir.json semantic_diff.json
+excel-ir compare-ir --structural-only a.ir.json b.ir.json structural_diff.json
 ```
 
 ## Patch / audit
@@ -35,6 +39,7 @@ excel-ir validate patch patch.json
 ## Semantic metadata
 
 ```bash
+excel-ir metadata status workbook.xlsx
 excel-ir metadata export out.ir.json metadata.json
 excel-ir metadata import stripped.ir.json metadata.json restored.ir.json
 excel-ir metadata extract metadata.json --from-xlsx workbook.xlsx
@@ -52,5 +57,3 @@ excel-ir corpus list --config tests/fixtures/corpus_config.json
 excel-ir corpus run --config tests/fixtures/corpus_config.json
 excel-ir corpus report corpus_results/summary.json corpus_results/report.html
 ```
-
-`corpus run` writes `summary.json` and `report.html` into the configured output directory.

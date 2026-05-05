@@ -10,6 +10,7 @@ try:
         extract_semantic_metadata_from_xlsx, verify_semantic_metadata_xlsx,
         repair_semantic_metadata_xlsx, inspect_workbook,
         compare_ir_files, strip_semantic_metadata_xlsx,
+        metadata_status_xlsx, anonymize_workbook_xlsx,
     )
     from .ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
 except ImportError:  # dev fallback when imported from flat source tree
@@ -22,6 +23,7 @@ except ImportError:  # dev fallback when imported from flat source tree
         extract_semantic_metadata_from_xlsx, verify_semantic_metadata_xlsx,
         repair_semantic_metadata_xlsx, inspect_workbook,
         compare_ir_files, strip_semantic_metadata_xlsx,
+        metadata_status_xlsx, anonymize_workbook_xlsx,
     )
     from ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
 
@@ -34,7 +36,8 @@ __all__ = [
     "extract_semantic_metadata_from_xlsx", "verify_semantic_metadata_xlsx",
     "repair_semantic_metadata_xlsx", "inspect_workbook",
     "compare_ir_files", "strip_semantic_metadata_xlsx",
+    "metadata_status_xlsx", "anonymize_workbook_xlsx",
     "apply_patch", "apply_patch_with_log", "dry_run", "validate_patch",
 ]
 
-__version__ = "2.0.0a9"
+__version__ = "2.0.0a10"
