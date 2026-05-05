@@ -94,6 +94,8 @@ excel-ir metadata verify semantic_metadata.json
 excel-ir metadata verify --from-xlsx workbook.xlsx
 excel-ir metadata extract semantic_metadata.json --from-xlsx workbook.xlsx
 excel-ir metadata repair repaired.xlsx --from-xlsx workbook.xlsx
+excel-ir metadata strip stripped.xlsx --from-xlsx workbook.xlsx
+excel-ir compare-ir a.ir.json b.ir.json ir_diff.json
 ```
 
 v2.0.0a3 metadata includes a SHA-256 `checksum` over the canonical payload. Parse rejects corrupted checksummed metadata rather than merging it silently.

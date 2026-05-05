@@ -836,6 +836,17 @@ def verify_semantic_metadata_xlsx(path: str) -> Dict[str, Any]:
     return result
 
 
+def strip_semantic_metadata_xlsx(src_path: str, out_path: str) -> Dict[str, Any]:
+    """Copy an XLSX while removing the hidden semantic metadata carrier sheet."""
+    wb = load_workbook(src_path, data_only=False)
+    removed = False
+    if METADATA_SHEET_NAME in wb.sheetnames:
+        del wb[METADATA_SHEET_NAME]
+        removed = True
+    wb.save(out_path)
+    return {"ok": True, "source": src_path, "output": out_path, "removed": removed}
+
+
 def repair_semantic_metadata_xlsx(src_path: str, out_path: str) -> Dict[str, Any]:
     """Rewrite an XLSX with freshly collected semantic metadata embedded.
 
@@ -1097,6 +1108,41 @@ def canonical_for_diff(ir: Dict[str, Any]) -> Dict[str, Any]:
     for s in data.get("workbook", {}).get("sheets", []):
         s.pop("logical", None)
     return _normalize_ir_for_diff(data)
+
+
+def compare_ir(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
+    ia = canonical_for_diff(a)
+    ib = canonical_for_diff(b)
+    if ia == ib:
+        return {"ok": True, "diff_count": 0, "diffs": [], "truncated": False}
+    diffs: List[Dict[str, Any]] = []
+    sheets_a = {s.get("name"): s for s in ia.get("workbook", {}).get("sheets", []) or []}
+    sheets_b = {s.get("name"): s for s in ib.get("workbook", {}).get("sheets", []) or []}
+    for sname in sorted(set(sheets_a) | set(sheets_b), key=lambda x: str(x)):
+        sa = sheets_a.get(sname)
+        sb = sheets_b.get(sname)
+        if sa is None or sb is None:
+            diffs.append({"sheet": sname, "type": "sheet_missing", "a": sa is not None, "b": sb is not None})
+            continue
+        for key in sorted(set(sa) | set(sb), key=str):
+            if sa.get(key) != sb.get(key):
+                if key == "cells":
+                    ca = sa.get("cells", {}) or {}
+                    cb = sb.get("cells", {}) or {}
+                    for coord in sorted(set(ca) | set(cb)):
+                        if ca.get(coord) != cb.get(coord):
+                            diffs.append({"sheet": sname, "coord": coord, "type": "cell", "a": ca.get(coord), "b": cb.get(coord)})
+                            if len(diffs) >= 200:
+                                return {"ok": False, "diff_count": 201, "diffs": diffs, "truncated": True}
+                else:
+                    diffs.append({"sheet": sname, "type": key, "a": sa.get(key), "b": sb.get(key)})
+                    if len(diffs) >= 200:
+                        return {"ok": False, "diff_count": 201, "diffs": diffs, "truncated": True}
+    return {"ok": not diffs, "diff_count": len(diffs), "diffs": diffs[:200], "truncated": len(diffs) > 200}
+
+
+def compare_ir_files(a_path: str, b_path: str) -> Dict[str, Any]:
+    return compare_ir(load_json(a_path), load_json(b_path))
 
 
 def diff_workbooks_plus(a: str, b: str) -> Dict[str, Any]:

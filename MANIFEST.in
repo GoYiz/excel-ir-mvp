@@ -1,7 +1,13 @@
 include README.md
 include CLI_REFERENCE.md
 include ARCHITECTURE.md
+include RELEASE_CHECKLIST.md
+include CONTRIBUTING.md
+include SECURITY.md
+include CODE_OF_CONDUCT.md
 include LICENSE
+recursive-include docs *.md
+recursive-include tools *.py
 recursive-include src/excel_ir_mvp *.json *.schema.json
 recursive-include tests *.py
 recursive-include tests/fixtures *

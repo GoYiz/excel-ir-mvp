@@ -7,7 +7,7 @@ Python prototype for parsing complex human-authored Excel reports into an abstra
 
 Repository: https://github.com/GoYiz/excel-ir-mvp
 
-Current prerelease: **2.0.0a8**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
+Current prerelease: **2.0.0a9**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
 
 ## Install
 
@@ -25,6 +25,7 @@ excel-ir inspect tests/fixtures/complex_report.xlsx --out inspect.json
 excel-ir parse tests/fixtures/complex_report.xlsx out.ir.json
 excel-ir rebuild out.ir.json rebuilt.xlsx
 excel-ir diff tests/fixtures/complex_report.xlsx rebuilt.xlsx diff.json
+excel-ir compare-ir out.ir.json out.ir.json ir_diff.json
 ```
 
 ## Semantic metadata
@@ -36,10 +37,11 @@ excel-ir metadata extract metadata.json --from-xlsx rebuilt.xlsx
 excel-ir metadata verify metadata.json
 excel-ir metadata verify --from-xlsx rebuilt.xlsx
 excel-ir metadata repair repaired.xlsx --from-xlsx workbook.xlsx
+excel-ir metadata strip stripped.xlsx --from-xlsx workbook.xlsx
 excel-ir metadata diff a.metadata.json b.metadata.json metadata_diff.json
 ```
 
-Semantic table metadata is stored in a `veryHidden` sheet named `_excel_ir_metadata` with a SHA-256 checksum.
+Semantic table metadata is stored in a `veryHidden` sheet named `_excel_ir_metadata` with a SHA-256 checksum. See [Native vs Semantic Tables](docs/native-vs-semantic-tables.md).
 
 ## Corpus
 
@@ -49,12 +51,7 @@ excel-ir corpus run --config tests/fixtures/corpus_config.json
 excel-ir corpus report corpus_results/summary.json corpus_results/report.html
 ```
 
-Current categories:
-
-- `synthetic_complex`
-- `metadata_roundtrip`
-- `native_table`
-- `semantic_table`
+Current categories: `synthetic_complex`, `metadata_roundtrip`, `native_table`, `semantic_table`.
 
 CI writes `corpus_results/summary.json`, `corpus_results/report.html`, and `ci_inspect.json`; GitHub Actions uploads them as a `corpus-report` artifact.
 
@@ -66,15 +63,6 @@ python3 ci_check.py
 python3 -m build --sdist --wheel
 python3 -m twine check dist/*
 ```
-
-## Architecture
-
-The project keeps two layers separate:
-
-1. **Fidelity IR**: reversible workbook structure, cells, styles, merges, layout, formulas, tables, charts, images, validation, print settings.
-2. **Semantic IR**: logical tables, native-vs-semantic table classification, field maps, patch history, metadata checksum, corpus/reporting context.
-
-Complex merged or multi-row-header tables are treated as `semantic` tables rather than forced back into unsafe OOXML native tables.
 
 ## License
 

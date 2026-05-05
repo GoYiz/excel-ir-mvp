@@ -157,6 +157,24 @@ class ExcelIRMetadataTests(unittest.TestCase):
         result = json.loads(p.stdout)
         self.assertTrue(result['ok'])
         self.assertTrue(verify_semantic_metadata_xlsx(str(repaired))['ok'])
+    def test_validate_load_paths_and_main_failure(self):
+        import contextlib, io
+        from excel_ir_mvp import validate_ir
+        local_schema = ROOT / 'tmp_schema.json'
+        local_schema.write_text('{"required": ["x"]}', encoding='utf-8')
+        self.assertEqual(validate_ir.load(str(local_schema))['required'], ['x'])
+        with self.assertRaises(FileNotFoundError):
+            validate_ir.load('missing_schema_for_test.json')
+        bad_patch = ROOT / 'bad_patch.json'
+        bad_patch.write_text('{}', encoding='utf-8')
+        saved = sys.argv[:]
+        try:
+            sys.argv = ['validate_ir.py', 'patch', str(bad_patch)]
+            with contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    validate_ir.main()
+        finally:
+            sys.argv = saved
 
 
 if __name__ == '__main__':

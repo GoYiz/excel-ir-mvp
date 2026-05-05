@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a8')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a9')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
@@ -191,6 +191,84 @@ class ExcelIRMVPTests(unittest.TestCase):
         finally:
             sys.argv = saved_argv
         self.assertIn('Excel IR Corpus Report', html_path.read_text(encoding='utf-8'))
+    def test_compare_ir_cli_and_metadata_strip(self):
+        from excel_ir_mvp.excel_ir_plus import compare_ir_files, load_json, parse_workbook_plus, rebuild_workbook_plus
+        ir_a = ROOT / 'alpha9_a.ir.json'
+        ir_b = ROOT / 'alpha9_b.ir.json'
+        ir = parse_workbook_plus(str(fixture_path('complex_report.xlsx')))
+        ir_a.write_text(json.dumps(ir, ensure_ascii=False, indent=2), encoding='utf-8')
+        ir_b.write_text(json.dumps(ir, ensure_ascii=False, indent=2), encoding='utf-8')
+        self.assertTrue(compare_ir_files(str(ir_a), str(ir_b))['ok'])
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'compare-ir', str(ir_a), str(ir_b), 'alpha9_ir_diff.json'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(load_json(str(ROOT / 'alpha9_ir_diff.json'))['diff_count'], 0)
+        with_metadata = ROOT / 'alpha9_with_metadata.xlsx'
+        stripped = ROOT / 'alpha9_stripped.xlsx'
+        rebuild_workbook_plus(ir, str(with_metadata))
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'strip', str(stripped), '--from-xlsx', str(with_metadata)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertTrue(json.loads(p.stdout)['removed'])
+        overview = json.loads(subprocess.run(['python3', 'excel_ir_cli.py', 'inspect', str(stripped)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout)
+        self.assertFalse(overview['hidden_metadata']['present'])
+    def test_inprocess_auxiliary_entrypoints_for_coverage(self):
+        import contextlib, io, runpy
+        from excel_ir_mvp.excel_ir_cli import main as cli_main
+        import excel_ir_mvp.audit_report as audit_mod
+        import excel_ir_mvp.bench as pkg_bench
+        import excel_ir_mvp.field_map_review as fmr
+
+        saved_argv = sys.argv[:]
+        try:
+            # Cover python -m excel_ir_mvp in-process.
+            sys.argv = ['excel-ir', 'doctor']
+            with contextlib.redirect_stdout(io.StringIO()):
+                runpy.run_module('excel_ir_mvp.__main__', run_name='__main__')
+
+            # Cover compare-ir CLI in-process.
+            out = ROOT / 'inprocess_compare_ir.json'
+            sys.argv = ['excel-ir', 'compare-ir', str(fixture_path('complex_ir_v07.json')), str(fixture_path('complex_ir_v07.json')), str(out)]
+            with contextlib.redirect_stdout(io.StringIO()):
+                cli_main()
+            self.assertEqual(json.loads(out.read_text(encoding='utf-8'))['diff_count'], 0)
+
+            # Cover legacy field_map_review main, including usage branch.
+            review = ROOT / 'legacy_field_map_review.html'
+            sys.argv = ['field_map_review.py', str(fixture_path('complex_ir_v07.json')), str(review)]
+            with contextlib.redirect_stdout(io.StringIO()):
+                fmr.main()
+            self.assertIn('Field Map Review', review.read_text(encoding='utf-8'))
+            sys.argv = ['field_map_review.py']
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    fmr.main()
+
+            # Cover audit_report main and usage branch.
+            tx = ROOT / 'inprocess_audit_tx.json'
+            tx.write_text(json.dumps({'impact': {'cells_changed': 1}, 'impact_graph': {}, 'actions': [{'index': 1, 'op': 'set_cell', 'impact': {}, 'cell_diffs_sample': [{'sheet': 'S', 'coord': 'A1'}]}]}), encoding='utf-8')
+            audit_html = ROOT / 'inprocess_audit.html'
+            sys.argv = ['audit_report.py', str(tx), str(audit_html), 'Aux Audit']
+            with contextlib.redirect_stdout(io.StringIO()):
+                audit_mod.main()
+            self.assertIn('Aux Audit', audit_html.read_text(encoding='utf-8'))
+            sys.argv = ['audit_report.py']
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    audit_mod.main()
+
+            # Cover package bench without spawning slow subprocesses.
+            old_run = pkg_bench.run
+            try:
+                pkg_bench.run = lambda cmd: {'cmd': cmd, 'returncode': 0, 'seconds': 0.01}
+                summary = pkg_bench.run_bench(max_total_seconds=1.0)
+                self.assertTrue(summary['ok'])
+                sys.argv = ['bench.py']
+                with contextlib.redirect_stdout(io.StringIO()):
+                    pkg_bench.main()
+                self.assertTrue((ROOT / 'bench_results.json').exists())
+            finally:
+                pkg_bench.run = old_run
+        finally:
+            sys.argv = saved_argv
 
 
 if __name__ == '__main__':

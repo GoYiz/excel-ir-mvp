@@ -12,6 +12,7 @@ excel-ir inspect workbook.xlsx --out inspect.json
 excel-ir parse workbook.xlsx out.ir.json
 excel-ir rebuild out.ir.json rebuilt.xlsx
 excel-ir diff original.xlsx rebuilt.xlsx diff.json
+excel-ir compare-ir a.ir.json b.ir.json ir_diff.json
 ```
 
 ## Patch / audit
@@ -40,6 +41,7 @@ excel-ir metadata extract metadata.json --from-xlsx workbook.xlsx
 excel-ir metadata verify metadata.json
 excel-ir metadata verify --from-xlsx workbook.xlsx
 excel-ir metadata repair repaired.xlsx --from-xlsx workbook.xlsx
+excel-ir metadata strip stripped.xlsx --from-xlsx workbook.xlsx
 excel-ir metadata diff a.metadata.json b.metadata.json metadata_diff.json
 ```
 

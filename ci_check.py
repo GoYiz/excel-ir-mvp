@@ -14,13 +14,14 @@ SOURCE_COMMANDS = [
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_excel_ir_mvp', 'tests.test_patch_ops'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_native_tables', 'tests.test_metadata'],
     ['python3', '-m', 'coverage', 'combine'],
-    ['python3', '-m', 'coverage', 'report', '--show-missing', '--fail-under=65'],
+    ['python3', '-m', 'coverage', 'report', '--show-missing', '--fail-under=70'],
     ['python3', 'excel_ir_cli.py', 'validate', 'ir', 'tests/fixtures/complex_ir_v07.json'],
     ['python3', 'excel_ir_cli.py', 'validate', 'patch', 'tests/fixtures/v08_patch.json'],
     ['python3', 'golden_tests.py'],
     ['python3', 'corpus_runner.py'],
     ['python3', 'corpus_runner.py', 'report', 'corpus_results/summary.json', 'corpus_results/report.html'],
     ['python3', 'excel_ir_cli.py', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_inspect.json'],
+    ['python3', 'excel_ir_cli.py', 'compare-ir', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_compare_ir.json'],
 ]
 
 INSTALLED_COMMANDS = [
@@ -35,6 +36,8 @@ INSTALLED_COMMANDS = [
     ['excel-ir', 'metadata', 'repair', 'ci_installed_repaired.xlsx', '--from-xlsx', 'tests/fixtures/complex_report.xlsx'],
     ['excel-ir', 'metadata', 'verify', '--from-xlsx', 'ci_installed_repaired.xlsx'],
     ['excel-ir', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_installed_inspect.json'],
+    ['excel-ir', 'compare-ir', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_installed_compare_ir.json'],
+    ['excel-ir', 'metadata', 'strip', 'ci_installed_stripped.xlsx', '--from-xlsx', 'ci_installed_repaired.xlsx'],
 ]
 
 
