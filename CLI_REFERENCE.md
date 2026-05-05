@@ -1,63 +1,54 @@
 # CLI Reference
 
-Generated for Excel IR MVP v2.0.0a7.
-
-## Basic
-
 ```bash
 excel-ir doctor
-excel-ir parse input.xlsx out.ir.json
-excel-ir rebuild out.ir.json rebuilt.xlsx
-excel-ir diff input.xlsx rebuilt.xlsx diff.json
+excel-ir bench
 ```
 
-## Patch
+## Workbook IR
 
 ```bash
-excel-ir patch out.ir.json patch.json patched.ir.json --plan plan.json --log tx.json
-excel-ir patch out.ir.json patch.json --dry-run --plan plan.json
+excel-ir inspect workbook.xlsx --out inspect.json
+excel-ir parse workbook.xlsx out.ir.json
+excel-ir rebuild out.ir.json rebuilt.xlsx
+excel-ir diff original.xlsx rebuilt.xlsx diff.json
+```
+
+## Patch / audit
+
+```bash
+excel-ir patch in.ir.json patch.json out.ir.json --plan plan.json --log tx.json
+excel-ir patch in.ir.json patch.json --dry-run --plan plan.json
+excel-ir report diff.json report.html --plan plan.json --log tx.json
+excel-ir audit tx.json audit.html
+excel-ir field-map-review in.ir.json field_map_review.html
+```
+
+## Validation
+
+```bash
+excel-ir validate ir out.ir.json
+excel-ir validate patch patch.json
 ```
 
 ## Semantic metadata
 
 ```bash
-excel-ir metadata export out.ir.json semantic_metadata.json
-excel-ir metadata import stripped.ir.json semantic_metadata.json restored.ir.json
-excel-ir metadata extract semantic_metadata.json --from-xlsx workbook.xlsx
-excel-ir metadata diff a.semantic.json b.semantic.json metadata_diff.json
-excel-ir metadata verify semantic_metadata.json
-excel-ir metadata verify --from-xlsx rebuilt.xlsx
+excel-ir metadata export out.ir.json metadata.json
+excel-ir metadata import stripped.ir.json metadata.json restored.ir.json
+excel-ir metadata extract metadata.json --from-xlsx workbook.xlsx
+excel-ir metadata verify metadata.json
+excel-ir metadata verify --from-xlsx workbook.xlsx
+excel-ir metadata repair repaired.xlsx --from-xlsx workbook.xlsx
+excel-ir metadata diff a.metadata.json b.metadata.json metadata_diff.json
 ```
 
 ## Corpus
 
 ```bash
-excel-ir corpus list --config corpus_config.json
-excel-ir corpus run --config corpus_config.json
-excel-ir corpus report corpus_results/summary.json corpus_report.html
+excel-ir corpus list --config tests/fixtures/corpus_config.json
+excel-ir corpus run --config tests/fixtures/corpus_config.json
+excel-ir corpus report corpus_results/summary.json corpus_results/report.html
 ```
 
-Corpus summary includes category rollups such as `synthetic_complex`, `metadata_roundtrip`, `native_table`, and `semantic_table`.
-
-## Reports
-
-```bash
-excel-ir report diff.json report.html --title "Report" --plan plan.json --log tx.json
-excel-ir audit tx.json audit.html --title "Audit"
-```
-
-## Validation / Bench
-
-```bash
-excel-ir validate ir out.ir.json
-excel-ir validate patch patch.json
-excel-ir bench
-```
-
-## Field Map Review
-
-```bash
-excel-ir field-map-review out.ir.json field_map_review.html
-```
-
-The generated HTML can produce and download a `confirm_field_map.patch.json` file.
+`corpus run` writes `summary.json` and `report.html` into the configured output directory.

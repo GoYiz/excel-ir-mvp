@@ -836,6 +836,84 @@ def verify_semantic_metadata_xlsx(path: str) -> Dict[str, Any]:
     return result
 
 
+def repair_semantic_metadata_xlsx(src_path: str, out_path: str) -> Dict[str, Any]:
+    """Rewrite an XLSX with freshly collected semantic metadata embedded.
+
+    This is intentionally conservative: it reparses the visible workbook, rebuilds
+    it through the IR pipeline, and writes a new veryHidden metadata carrier with
+    a fresh checksum. The source file is never modified in-place.
+    """
+    ir = parse_workbook_plus(src_path)
+    rebuild_workbook_plus(ir, out_path)
+    metadata = extract_semantic_metadata_from_xlsx(out_path)
+    result = verify_semantic_metadata(metadata)
+    result.update({
+        "source": src_path,
+        "output": out_path,
+        "repaired": bool(result.get("ok")),
+    })
+    return result
+
+
+def inspect_workbook(path: str) -> Dict[str, Any]:
+    """Return a compact, JSON-serializable workbook overview for CLI/users."""
+    wb = load_workbook(path, data_only=False)
+    hidden_metadata = read_semantic_metadata_sheet(wb)
+    ir = parse_workbook_plus(path)
+    sheets = []
+    total_cells = 0
+    total_tables = 0
+    total_semantic = 0
+    total_native = 0
+    total_formulas = 0
+    for sheet in ir.get("workbook", {}).get("sheets", []) or []:
+        cells = sheet.get("cells", {}) or {}
+        extra = sheet.get("extra", {}) or {}
+        formulas = sum(1 for c in cells.values() if isinstance(c.get("value"), str) and c.get("value", "").startswith("="))
+        tables = extra.get("tables", []) or []
+        semantic = sum(1 for t in tables if t.get("table_kind") == "semantic")
+        native = sum(1 for t in tables if t.get("table_kind") == "native")
+        total_cells += len(cells)
+        total_tables += len(tables)
+        total_semantic += semantic
+        total_native += native
+        total_formulas += formulas
+        sheets.append(_strip_none({
+            "name": sheet.get("name"),
+            "dimensions": sheet.get("dimensions"),
+            "cell_count": len(cells),
+            "formula_count": formulas,
+            "merge_count": len(sheet.get("merged_cells", []) or []),
+            "table_count": len(tables),
+            "native_table_count": native,
+            "semantic_table_count": semantic,
+            "chart_count": len(extra.get("charts", []) or []),
+            "image_count": len(extra.get("images", []) or []),
+            "data_validation_count": len(extra.get("data_validations", []) or []),
+            "conditional_format_count": len(extra.get("conditional_formatting", []) or []),
+        }))
+    metadata = collect_semantic_metadata(ir)
+    return _strip_none({
+        "ok": True,
+        "path": path,
+        "sheet_count": len(sheets),
+        "sheets": sheets,
+        "totals": {
+            "cells": total_cells,
+            "formulas": total_formulas,
+            "tables": total_tables,
+            "native_tables": total_native,
+            "semantic_tables": total_semantic,
+        },
+        "hidden_metadata": {
+            "present": bool(hidden_metadata),
+            "checksum_ok": bool(hidden_metadata and verify_metadata_checksum(hidden_metadata)),
+            "tables": sum(len(s.get("tables", [])) for s in hidden_metadata.get("sheets", [])) if hidden_metadata else 0,
+        },
+        "collected_metadata": verify_semantic_metadata(metadata),
+    })
+
+
 def _metadata_table_item(table: Dict[str, Any]) -> Dict[str, Any]:
     item = {k: copy.deepcopy(table.get(k)) for k in TABLE_METADATA_KEYS if k in table}
     if "table_kind" not in item:

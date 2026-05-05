@@ -8,6 +8,7 @@ try:
         semantic_metadata_diff, verify_metadata_checksum,
         verify_semantic_metadata, verify_semantic_metadata_file,
         extract_semantic_metadata_from_xlsx, verify_semantic_metadata_xlsx,
+        repair_semantic_metadata_xlsx, inspect_workbook,
     )
     from .ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
 except ImportError:  # dev fallback when imported from flat source tree
@@ -18,6 +19,7 @@ except ImportError:  # dev fallback when imported from flat source tree
         semantic_metadata_diff, verify_metadata_checksum,
         verify_semantic_metadata, verify_semantic_metadata_file,
         extract_semantic_metadata_from_xlsx, verify_semantic_metadata_xlsx,
+        repair_semantic_metadata_xlsx, inspect_workbook,
     )
     from ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
 
@@ -28,7 +30,8 @@ __all__ = [
     "semantic_metadata_diff", "verify_metadata_checksum",
     "verify_semantic_metadata", "verify_semantic_metadata_file",
     "extract_semantic_metadata_from_xlsx", "verify_semantic_metadata_xlsx",
+    "repair_semantic_metadata_xlsx", "inspect_workbook",
     "apply_patch", "apply_patch_with_log", "dry_run", "validate_patch",
 ]
 
-__version__ = "2.0.0a7"
+__version__ = "2.0.0a8"

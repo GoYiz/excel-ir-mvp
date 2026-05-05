@@ -141,6 +141,22 @@ class ExcelIRMetadataTests(unittest.TestCase):
         reparsed = parse_workbook_plus(str(out))
         self.assertNotIn(METADATA_SHEET_NAME, [s['name'] for s in reparsed['workbook']['sheets']])
         self.assertFalse(reparsed['workbook']['sheets'][0].get('extra', {}).get('tables'))
+    def test_inspect_and_metadata_repair_cli(self):
+        from excel_ir_mvp.excel_ir_plus import inspect_workbook, verify_semantic_metadata_xlsx
+        overview = inspect_workbook(str(fixture_path('semantic_table.xlsx')))
+        self.assertTrue(overview['ok'])
+        self.assertGreaterEqual(overview['totals']['semantic_tables'], 1)
+        inspect_path = ROOT / 'cli_inspect.json'
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'inspect', str(fixture_path('semantic_table.xlsx')), '--out', str(inspect_path)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(json.loads(p.stdout)['totals']['semantic_tables'], 1)
+        self.assertTrue(json.loads(inspect_path.read_text(encoding='utf-8'))['ok'])
+        repaired = ROOT / 'metadata_repaired.xlsx'
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'repair', str(repaired), '--from-xlsx', str(fixture_path('semantic_table.xlsx'))], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        result = json.loads(p.stdout)
+        self.assertTrue(result['ok'])
+        self.assertTrue(verify_semantic_metadata_xlsx(str(repaired))['ok'])
 
 
 if __name__ == '__main__':

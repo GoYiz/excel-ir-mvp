@@ -19,6 +19,8 @@ SOURCE_COMMANDS = [
     ['python3', 'excel_ir_cli.py', 'validate', 'patch', 'tests/fixtures/v08_patch.json'],
     ['python3', 'golden_tests.py'],
     ['python3', 'corpus_runner.py'],
+    ['python3', 'corpus_runner.py', 'report', 'corpus_results/summary.json', 'corpus_results/report.html'],
+    ['python3', 'excel_ir_cli.py', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_inspect.json'],
 ]
 
 INSTALLED_COMMANDS = [
@@ -30,6 +32,9 @@ INSTALLED_COMMANDS = [
     ['excel-ir', 'metadata', 'export', 'tests/fixtures/complex_ir_v07.json', 'ci_installed_metadata.json'],
     ['excel-ir', 'metadata', 'diff', 'ci_installed_metadata.json', 'ci_installed_metadata.json', 'ci_installed_metadata_diff.json'],
     ['excel-ir', 'metadata', 'verify', 'ci_installed_metadata.json'],
+    ['excel-ir', 'metadata', 'repair', 'ci_installed_repaired.xlsx', '--from-xlsx', 'tests/fixtures/complex_report.xlsx'],
+    ['excel-ir', 'metadata', 'verify', '--from-xlsx', 'ci_installed_repaired.xlsx'],
+    ['excel-ir', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_installed_inspect.json'],
 ]
 
 

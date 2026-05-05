@@ -101,6 +101,9 @@ def run_corpus(config: dict):
         results.append(item)
     ok = all(r.get('diff_count') == 0 and r.get('parse_ok') and r.get('rebuild_ok') for r in results)
     summary = {'ok': ok, 'categories': _category_summary(results), 'results': results}
+    report_html = out / 'report.html'
+    write_report(summary, str(report_html))
+    summary['report_html'] = str(report_html)
     (out / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
     return summary
 

@@ -30,6 +30,9 @@ def main():
     p = sub.add_parser('diff')
     p.add_argument('a'); p.add_argument('b'); p.add_argument('diff_json')
 
+    p = sub.add_parser('inspect')
+    p.add_argument('xlsx'); p.add_argument('--out')
+
     p = sub.add_parser('patch')
     p.add_argument('ir_json'); p.add_argument('patch_json'); p.add_argument('out_ir', nargs='?')
     p.add_argument('--dry-run', action='store_true'); p.add_argument('--plan'); p.add_argument('--log')
@@ -65,6 +68,9 @@ def main():
     p = meta_sub.add_parser('extract')
     p.add_argument('metadata_json')
     p.add_argument('--from-xlsx', dest='from_xlsx', required=True)
+    p = meta_sub.add_parser('repair')
+    p.add_argument('out_xlsx')
+    p.add_argument('--from-xlsx', dest='from_xlsx', required=True)
     p = meta_sub.add_parser('diff')
     p.add_argument('a_metadata_json'); p.add_argument('b_metadata_json'); p.add_argument('diff_json', nargs='?')
     p = meta_sub.add_parser('verify')
@@ -85,6 +91,11 @@ def main():
         d = excel_ir_plus.diff_workbooks_plus(args.a, args.b)
         excel_ir_plus.save_json(d, args.diff_json)
         print(json.dumps(d, ensure_ascii=False, indent=2))
+    elif args.cmd == 'inspect':
+        result = excel_ir_plus.inspect_workbook(args.xlsx)
+        if args.out:
+            excel_ir_plus.save_json(result, args.out)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.cmd == 'patch':
         ir = ir_patch.load_json(args.ir_json); patch = ir_patch.load_json(args.patch_json)
         plan = ir_patch.dry_run(ir, patch)
@@ -149,6 +160,11 @@ def main():
             metadata = excel_ir_plus.extract_semantic_metadata_from_xlsx(args.from_xlsx)
             excel_ir_plus.save_json(metadata, args.metadata_json)
             print(json.dumps({'ok': True, 'output': args.metadata_json, 'tables': sum(len(s.get('tables', [])) for s in metadata.get('sheets', []))}, ensure_ascii=False))
+        elif args.metadata_cmd == 'repair':
+            result = excel_ir_plus.repair_semantic_metadata_xlsx(args.from_xlsx, args.out_xlsx)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            if not result.get('ok'):
+                raise SystemExit(1)
         elif args.metadata_cmd == 'diff':
             d = excel_ir_plus.semantic_metadata_diff_files(args.a_metadata_json, args.b_metadata_json)
             if args.diff_json:

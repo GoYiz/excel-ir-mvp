@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a7')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a8')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
@@ -90,6 +90,7 @@ class ExcelIRMVPTests(unittest.TestCase):
         config['output_dir'] = 'corpus_results_api'
         summary = corpus_runner.run_corpus(config)
         self.assertTrue(summary['ok'])
+        self.assertTrue((ROOT / summary['report_html']).exists())
         self.assertIn('synthetic_complex', summary['categories'])
         self.assertEqual(summary['results'][0]['diff_count'], 0)
 

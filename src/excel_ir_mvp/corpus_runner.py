@@ -83,6 +83,9 @@ def run_corpus(config: dict):
                 item['impact'] = json.loads(tx.read_text()).get('impact')
         results.append(item)
     summary = {'ok': all(r.get('diff_count') == 0 and r.get('parse_ok') and r.get('rebuild_ok') for r in results), 'categories': _category_summary(results), 'results': results}
+    report_html = out / 'report.html'
+    write_report(summary, str(report_html))
+    summary['report_html'] = str(report_html)
     (out / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
     return summary
 
