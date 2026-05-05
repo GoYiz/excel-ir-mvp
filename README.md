@@ -1,13 +1,17 @@
 # Excel IR MVP
 
-Current version: `2.0.0a4`.
+Current version: `2.0.0a5`.
+
+Repository: <https://github.com/GoYiz/excel-ir-mvp>
 
 A Python MVP for parsing complex human Excel reports into an intermediate representation (IR), applying semantic patches, rebuilding XLSX workbooks, and generating validation/audit artifacts.
 
 ## Quick start
 
 ```bash
-cd /var/minis/workspace/excel_ir_mvp
+git clone https://github.com/GoYiz/excel-ir-mvp.git
+cd excel-ir-mvp
+python3 -m pip install -e .
 python3 -m unittest -v tests.test_excel_ir_mvp tests.test_patch_ops tests.test_native_tables tests.test_metadata
 python3 ci_check.py
 ```
@@ -60,6 +64,8 @@ Corpus summaries now include category rollups such as:
 - `synthetic_complex`
 - `metadata_roundtrip`
 
+See [tests/fixtures/README.md](tests/fixtures/README.md) for fixture conventions.
+
 ## Validation status
 
 - Source CI: pass.
@@ -69,8 +75,7 @@ Corpus summaries now include category rollups such as:
 - Build: wheel + sdist.
 - Twine check: pass.
 
-## Artifacts
+## Latest release artifact names
 
-- `dist/excel_ir_mvp-2.0.0a4-py3-none-any.whl`
-- `dist/excel_ir_mvp-2.0.0a4.tar.gz`
-- `dist/SHA256SUMS`
+- `excel_ir_mvp-2.0.0a5-py3-none-any.whl`
+- `excel_ir_mvp-2.0.0a5.tar.gz`

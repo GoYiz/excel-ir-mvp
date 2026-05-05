@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a4')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a5')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
