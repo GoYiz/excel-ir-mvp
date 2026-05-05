@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a6')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a7')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
@@ -85,7 +85,7 @@ class ExcelIRMVPTests(unittest.TestCase):
     def test_corpus_runner_api(self):
         import corpus_runner
         config = corpus_runner.load_config('tests/fixtures/corpus_config.json')
-        self.assertEqual(len(config['samples']), 2)
+        self.assertGreaterEqual(len(config['samples']), 4)
         config = dict(config)
         config['output_dir'] = 'corpus_results_api'
         summary = corpus_runner.run_corpus(config)
@@ -136,6 +136,8 @@ class ExcelIRMVPTests(unittest.TestCase):
         self.assertTrue(pkg_corpus.load_config('corpus_config.json')['samples'])
         listed = pkg_corpus.list_samples(pkg_corpus.load_config('corpus_config.json'))
         self.assertIn('metadata_roundtrip', listed['categories'])
+        self.assertIn('native_table', listed['categories'])
+        self.assertIn('semantic_table', listed['categories'])
         html = pkg_corpus.render_summary_html({'ok': True, 'categories': cats, 'results': results})
         self.assertIn('Excel IR Corpus Report', html)
 

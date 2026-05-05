@@ -10,6 +10,8 @@ tests/fixtures/
   complex_ir_v07.json          # stable parsed IR fixture from v0.7 lineage
   v08_patch.json               # semantic patch with confirm_field_map + row ops
   v08_patched_report.xlsx      # patched workbook round-trip fixture
+  native_table.xlsx            # simple safe native Excel Table fixture
+  semantic_table.xlsx          # merged/multi-row semantic table fixture
   corpus_config.json           # category-aware corpus configuration
 ```
 
@@ -27,11 +29,11 @@ Current categories:
 
 - `synthetic_complex`
 - `metadata_roundtrip`
+- `native_table`
+- `semantic_table`
 
 Planned categories:
 
-- `native_table`
-- `semantic_table`
 - `real_world`
 
 ## Privacy rule

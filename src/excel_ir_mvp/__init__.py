@@ -31,4 +31,4 @@ __all__ = [
     "apply_patch", "apply_patch_with_log", "dry_run", "validate_patch",
 ]
 
-__version__ = "2.0.0a6"
+__version__ = "2.0.0a7"

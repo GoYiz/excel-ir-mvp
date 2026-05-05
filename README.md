@@ -1,6 +1,6 @@
 # Excel IR MVP
 
-Current version: `2.0.0a6`.
+Current version: `2.0.0a7`.
 
 [![CI](https://github.com/GoYiz/excel-ir-mvp/actions/workflows/ci.yml/badge.svg)](https://github.com/GoYiz/excel-ir-mvp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -45,17 +45,10 @@ while preserving cell grid, styles, auto filters, formulas, and semantic `field_
 
 ## Semantic metadata persistence
 
-Rebuilt XLSX files embed compact semantic metadata in a very-hidden worksheet:
-
-```text
-_excel_ir_metadata!A1
-```
-
-v2 metadata includes a SHA-256 checksum and supports export/import/diff/verify, including XLSX input verification:
-
 ```bash
 excel-ir metadata export out.ir.json semantic_metadata.json
 excel-ir metadata import stripped.ir.json semantic_metadata.json restored.ir.json
+excel-ir metadata extract metadata.json --from-xlsx workbook.xlsx
 excel-ir metadata diff a.semantic.json b.semantic.json metadata_diff.json
 excel-ir metadata verify semantic_metadata.json
 excel-ir metadata verify --from-xlsx rebuilt.xlsx
@@ -69,10 +62,12 @@ excel-ir corpus run --config corpus_config.json
 excel-ir corpus report corpus_results/summary.json corpus_report.html
 ```
 
-Corpus summaries include category rollups such as:
+Corpus categories now include:
 
 - `synthetic_complex`
 - `metadata_roundtrip`
+- `native_table`
+- `semantic_table`
 
 See [tests/fixtures/README.md](tests/fixtures/README.md) for fixture conventions.
 
@@ -80,12 +75,13 @@ See [tests/fixtures/README.md](tests/fixtures/README.md) for fixture conventions
 
 - Source CI: pass.
 - Installed CI: pass.
-- Tests: 28+.
-- Coverage gate: `--fail-under=65`.
+- Tests: 27.
+- Coverage: 69% with `--fail-under=65`.
 - Build: wheel + sdist.
 - Twine check: pass.
+- PyPI publish: skipped for this alpha.
 
 ## Latest release artifact names
 
-- `excel_ir_mvp-2.0.0a6-py3-none-any.whl`
-- `excel_ir_mvp-2.0.0a6.tar.gz`
+- `excel_ir_mvp-2.0.0a7-py3-none-any.whl`
+- `excel_ir_mvp-2.0.0a7.tar.gz`

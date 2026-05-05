@@ -11,6 +11,16 @@
       "name": "v08_patched_roundtrip",
       "category": "metadata_roundtrip",
       "xlsx": "tests/fixtures/v08_patched_report.xlsx"
+    },
+    {
+      "name": "native_table",
+      "category": "native_table",
+      "xlsx": "tests/fixtures/native_table.xlsx"
+    },
+    {
+      "name": "semantic_table",
+      "category": "semantic_table",
+      "xlsx": "tests/fixtures/semantic_table.xlsx"
     }
   ]
 }

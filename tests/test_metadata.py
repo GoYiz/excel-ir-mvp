@@ -101,6 +101,10 @@ class ExcelIRMetadataTests(unittest.TestCase):
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'verify', '--from-xlsx', str(ROOT / 'metadata_hidden_rebuilt.xlsx')], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         self.assertEqual(json.loads(p.stdout)['source'], 'xlsx')
+        extracted_path = ROOT / 'metadata_extracted_from_xlsx.json'
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'extract', str(extracted_path), '--from-xlsx', str(ROOT / 'metadata_hidden_rebuilt.xlsx')], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertTrue(load_json(str(extracted_path))['checksum'])
         self.assertEqual(semantic_metadata_diff(metadata, load_json(str(cli_meta_path)))['diff_count'], 0)
         diff_path = ROOT / 'metadata_cli_diff.json'
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'diff', str(metadata_path), str(cli_meta_path), str(diff_path)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

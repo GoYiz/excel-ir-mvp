@@ -1,6 +1,6 @@
 # CLI Reference
 
-Generated for Excel IR MVP v2.0.0a6.
+Generated for Excel IR MVP v2.0.0a7.
 
 ## Basic
 
@@ -23,12 +23,11 @@ excel-ir patch out.ir.json patch.json --dry-run --plan plan.json
 ```bash
 excel-ir metadata export out.ir.json semantic_metadata.json
 excel-ir metadata import stripped.ir.json semantic_metadata.json restored.ir.json
+excel-ir metadata extract semantic_metadata.json --from-xlsx workbook.xlsx
 excel-ir metadata diff a.semantic.json b.semantic.json metadata_diff.json
 excel-ir metadata verify semantic_metadata.json
 excel-ir metadata verify --from-xlsx rebuilt.xlsx
 ```
-
-When rebuilding XLSX, metadata is embedded into a very-hidden sheet named `_excel_ir_metadata`. v2 metadata includes a SHA-256 checksum.
 
 ## Corpus
 
@@ -38,7 +37,7 @@ excel-ir corpus run --config corpus_config.json
 excel-ir corpus report corpus_results/summary.json corpus_report.html
 ```
 
-Corpus summary includes category rollups such as `synthetic_complex` and `metadata_roundtrip`.
+Corpus summary includes category rollups such as `synthetic_complex`, `metadata_roundtrip`, `native_table`, and `semantic_table`.
 
 ## Reports
 

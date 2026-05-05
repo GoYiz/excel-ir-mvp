@@ -62,6 +62,9 @@ def main():
     p.add_argument('ir_json'); p.add_argument('metadata_json')
     p = meta_sub.add_parser('import')
     p.add_argument('ir_json'); p.add_argument('metadata_json'); p.add_argument('out_ir')
+    p = meta_sub.add_parser('extract')
+    p.add_argument('metadata_json')
+    p.add_argument('--from-xlsx', dest='from_xlsx', required=True)
     p = meta_sub.add_parser('diff')
     p.add_argument('a_metadata_json'); p.add_argument('b_metadata_json'); p.add_argument('diff_json', nargs='?')
     p = meta_sub.add_parser('verify')
@@ -142,6 +145,10 @@ def main():
             out = excel_ir_plus.import_semantic_metadata_to_ir(ir, metadata)
             excel_ir_plus.save_json(out, args.out_ir)
             print(json.dumps({'ok': True, 'output': args.out_ir}, ensure_ascii=False))
+        elif args.metadata_cmd == 'extract':
+            metadata = excel_ir_plus.extract_semantic_metadata_from_xlsx(args.from_xlsx)
+            excel_ir_plus.save_json(metadata, args.metadata_json)
+            print(json.dumps({'ok': True, 'output': args.metadata_json, 'tables': sum(len(s.get('tables', [])) for s in metadata.get('sheets', []))}, ensure_ascii=False))
         elif args.metadata_cmd == 'diff':
             d = excel_ir_plus.semantic_metadata_diff_files(args.a_metadata_json, args.b_metadata_json)
             if args.diff_json:
