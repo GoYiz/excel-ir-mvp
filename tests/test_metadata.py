@@ -26,6 +26,7 @@ class ExcelIRMetadataTests(unittest.TestCase):
             rebuild_workbook_plus,
             verify_metadata_checksum,
             verify_semantic_metadata,
+            verify_semantic_metadata_xlsx,
         )
         src_ir = parse_workbook_plus(str(fixture_path('complex_report.xlsx')))
         metadata = collect_semantic_metadata(src_ir)
@@ -37,6 +38,7 @@ class ExcelIRMetadataTests(unittest.TestCase):
         out = ROOT / 'metadata_hidden_rebuilt.xlsx'
         rebuild_workbook_plus(src_ir, str(out))
         wb = load_workbook(out)
+        self.assertTrue(verify_semantic_metadata_xlsx(str(out))['ok'])
         self.assertIn(METADATA_SHEET_NAME, wb.sheetnames)
         self.assertEqual(wb[METADATA_SHEET_NAME].sheet_state, 'veryHidden')
         reparsed = parse_workbook_plus(str(out))
@@ -96,7 +98,9 @@ class ExcelIRMetadataTests(unittest.TestCase):
                 cli_main()
         finally:
             sys.argv = saved_argv
-        self.assertTrue(json.loads(buf.getvalue())['ok'])
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'verify', '--from-xlsx', str(ROOT / 'metadata_hidden_rebuilt.xlsx')], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(json.loads(p.stdout)['source'], 'xlsx')
         self.assertEqual(semantic_metadata_diff(metadata, load_json(str(cli_meta_path)))['diff_count'], 0)
         diff_path = ROOT / 'metadata_cli_diff.json'
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'metadata', 'diff', str(metadata_path), str(cli_meta_path), str(diff_path)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

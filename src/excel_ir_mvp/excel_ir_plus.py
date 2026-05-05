@@ -821,6 +821,21 @@ def verify_semantic_metadata_file(path: str) -> Dict[str, Any]:
     return verify_semantic_metadata(load_json(path))
 
 
+def extract_semantic_metadata_from_xlsx(path: str) -> Dict[str, Any]:
+    wb = load_workbook(path, data_only=False)
+    metadata = read_semantic_metadata_sheet(wb)
+    if metadata:
+        return metadata
+    return collect_semantic_metadata(parse_workbook_plus(path))
+
+
+def verify_semantic_metadata_xlsx(path: str) -> Dict[str, Any]:
+    metadata = extract_semantic_metadata_from_xlsx(path)
+    result = verify_semantic_metadata(metadata)
+    result["source"] = "xlsx"
+    return result
+
+
 def _metadata_table_item(table: Dict[str, Any]) -> Dict[str, Any]:
     item = {k: copy.deepcopy(table.get(k)) for k in TABLE_METADATA_KEYS if k in table}
     if "table_kind" not in item:

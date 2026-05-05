@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a5')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a6')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
@@ -134,6 +134,10 @@ class ExcelIRMVPTests(unittest.TestCase):
         self.assertEqual(cats['synthetic_complex']['ok'], 1)
         self.assertEqual(cats['semantic_table']['failed'], 1)
         self.assertTrue(pkg_corpus.load_config('corpus_config.json')['samples'])
+        listed = pkg_corpus.list_samples(pkg_corpus.load_config('corpus_config.json'))
+        self.assertIn('metadata_roundtrip', listed['categories'])
+        html = pkg_corpus.render_summary_html({'ok': True, 'categories': cats, 'results': results})
+        self.assertIn('Excel IR Corpus Report', html)
 
     def test_validate_ir_error_branches(self):
         from excel_ir_mvp import validate_ir
@@ -159,6 +163,31 @@ class ExcelIRMVPTests(unittest.TestCase):
         finally:
             sys.argv = saved_argv
         self.assertEqual(load_json(str(out))['diff_count'], 0)
+    def test_cli_main_corpus_list_report_inprocess(self):
+        import contextlib, io
+        from excel_ir_mvp.excel_ir_cli import main as cli_main
+        saved_argv = sys.argv[:]
+        buf = io.StringIO()
+        try:
+            sys.argv = ['excel-ir', 'corpus', 'list', '--config', 'corpus_config.json']
+            with contextlib.redirect_stdout(buf):
+                cli_main()
+        finally:
+            sys.argv = saved_argv
+        self.assertIn('synthetic_complex', json.loads(buf.getvalue())['categories'])
+
+        summary = {'ok': True, 'categories': {'synthetic_complex': {'count': 1, 'ok': 1, 'failed': 0, 'diff_count_total': 0}}, 'results': [{'name': 's', 'category': 'synthetic_complex', 'parse_ok': True, 'rebuild_ok': True, 'diff_count': 0}]}
+        summary_path = ROOT / 'cli_corpus_summary.json'
+        html_path = ROOT / 'cli_corpus_report.html'
+        summary_path.write_text(json.dumps(summary), encoding='utf-8')
+        saved_argv = sys.argv[:]
+        try:
+            sys.argv = ['excel-ir', 'corpus', 'report', str(summary_path), str(html_path)]
+            with contextlib.redirect_stdout(io.StringIO()):
+                cli_main()
+        finally:
+            sys.argv = saved_argv
+        self.assertIn('Excel IR Corpus Report', html_path.read_text(encoding='utf-8'))
 
 
 if __name__ == '__main__':

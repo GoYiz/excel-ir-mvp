@@ -1,6 +1,6 @@
 # CLI Reference
 
-Generated for Excel IR MVP v2.0.0a4.
+Generated for Excel IR MVP v2.0.0a6.
 
 ## Basic
 
@@ -20,31 +20,25 @@ excel-ir patch out.ir.json patch.json --dry-run --plan plan.json
 
 ## Semantic metadata
 
-Export semantic table metadata (`table_kind`, `field_map`, confirmed mappings) from an IR file:
-
 ```bash
 excel-ir metadata export out.ir.json semantic_metadata.json
-```
-
-Import semantic table metadata into another IR file:
-
-```bash
 excel-ir metadata import stripped.ir.json semantic_metadata.json restored.ir.json
-```
-
-Diff two metadata payloads:
-
-```bash
 excel-ir metadata diff a.semantic.json b.semantic.json metadata_diff.json
+excel-ir metadata verify semantic_metadata.json
+excel-ir metadata verify --from-xlsx rebuilt.xlsx
 ```
 
-Verify metadata checksum and shape:
+When rebuilding XLSX, metadata is embedded into a very-hidden sheet named `_excel_ir_metadata`. v2 metadata includes a SHA-256 checksum.
+
+## Corpus
 
 ```bash
-excel-ir metadata verify semantic_metadata.json
+excel-ir corpus list --config corpus_config.json
+excel-ir corpus run --config corpus_config.json
+excel-ir corpus report corpus_results/summary.json corpus_report.html
 ```
 
-When rebuilding XLSX, the same metadata is embedded into a very-hidden sheet named `_excel_ir_metadata` so XLSX-only flows can preserve semantic table intent. v2 metadata includes a SHA-256 checksum.
+Corpus summary includes category rollups such as `synthetic_complex` and `metadata_roundtrip`.
 
 ## Reports
 
@@ -53,16 +47,13 @@ excel-ir report diff.json report.html --title "Report" --plan plan.json --log tx
 excel-ir audit tx.json audit.html --title "Audit"
 ```
 
-## Validation / Corpus / Bench
+## Validation / Bench
 
 ```bash
 excel-ir validate ir out.ir.json
 excel-ir validate patch patch.json
-excel-ir corpus --config corpus_config.json
 excel-ir bench
 ```
-
-Corpus summary includes category rollups such as `synthetic_complex` and `metadata_roundtrip`.
 
 ## Field Map Review
 

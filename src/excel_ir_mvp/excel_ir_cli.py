@@ -41,6 +41,13 @@ def main():
     p.add_argument('tx_log'); p.add_argument('html'); p.add_argument('--title', default='Excel IR Audit Report')
 
     p = sub.add_parser('corpus')
+    corpus_sub = p.add_subparsers(dest='corpus_cmd')
+    p = corpus_sub.add_parser('run')
+    p.add_argument('--config')
+    p = corpus_sub.add_parser('list')
+    p.add_argument('--config')
+    p = corpus_sub.add_parser('report')
+    p.add_argument('summary_json'); p.add_argument('html'); p.add_argument('--title', default='Excel IR Corpus Report')
     p.add_argument('--config')
 
     p = sub.add_parser('validate')
@@ -58,7 +65,8 @@ def main():
     p = meta_sub.add_parser('diff')
     p.add_argument('a_metadata_json'); p.add_argument('b_metadata_json'); p.add_argument('diff_json', nargs='?')
     p = meta_sub.add_parser('verify')
-    p.add_argument('metadata_json')
+    p.add_argument('metadata_json', nargs='?')
+    p.add_argument('--from-xlsx', dest='from_xlsx')
 
     sub.add_parser('doctor')
     sub.add_parser('bench')
@@ -97,8 +105,16 @@ def main():
         Path(args.html).write_text(audit_report.render(log, args.title), encoding='utf-8')
         print(json.dumps({'ok': True, 'output': args.html}, ensure_ascii=False))
     elif args.cmd == 'corpus':
-        summary = corpus_runner.run_corpus(corpus_runner.load_config(args.config))
-        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        cmd = args.corpus_cmd or 'run'
+        if cmd == 'list':
+            print(json.dumps(corpus_runner.list_samples(corpus_runner.load_config(args.config)), ensure_ascii=False, indent=2))
+        elif cmd == 'report':
+            summary = json.loads(Path(args.summary_json).read_text(encoding='utf-8'))
+            corpus_runner.write_report(summary, args.html, args.title)
+            print(json.dumps({'ok': True, 'output': args.html}, ensure_ascii=False))
+        else:
+            summary = corpus_runner.run_corpus(corpus_runner.load_config(args.config))
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.cmd == 'validate':
         data = json.loads(Path(args.json_file).read_text(encoding='utf-8'))
         schema = 'ir.schema.json' if args.kind == 'ir' else 'patch.schema.json'
@@ -132,7 +148,12 @@ def main():
                 excel_ir_plus.save_json(d, args.diff_json)
             print(json.dumps(d, ensure_ascii=False, indent=2))
         elif args.metadata_cmd == 'verify':
-            result = excel_ir_plus.verify_semantic_metadata_file(args.metadata_json)
+            if args.from_xlsx:
+                result = excel_ir_plus.verify_semantic_metadata_xlsx(args.from_xlsx)
+            else:
+                if not args.metadata_json:
+                    raise SystemExit('metadata_json required unless --from-xlsx is used')
+                result = excel_ir_plus.verify_semantic_metadata_file(args.metadata_json)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             if not result.get('ok'):
                 raise SystemExit(1)
