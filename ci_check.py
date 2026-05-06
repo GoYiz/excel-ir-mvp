@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 SOURCE_COMMANDS = [
-    ['python3', '-m', 'py_compile', 'excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_plus.py', 'src/excel_ir_mvp/ir_patch.py', 'src/excel_ir_mvp/formula_utils.py', 'src/excel_ir_mvp/validate_ir.py', 'src/excel_ir_mvp/models.py', 'src/excel_ir_mvp/__main__.py'],
+    ['python3', '-m', 'py_compile', 'excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_plus.py', 'src/excel_ir_mvp/ir_patch.py', 'src/excel_ir_mvp/formula_utils.py', 'src/excel_ir_mvp/validate_ir.py', 'src/excel_ir_mvp/models.py', 'src/excel_ir_mvp/backends.py', 'src/excel_ir_mvp/__main__.py'],
     ['python3', '-m', 'unittest', '-v', 'tests.test_excel_ir_mvp', 'tests.test_patch_ops', 'tests.test_native_tables', 'tests.test_metadata'],
     ['python3', '-m', 'coverage', 'erase'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest',
@@ -33,7 +33,8 @@ SOURCE_COMMANDS = [
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_package_corpus_runner_helpers',
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_compare_ir_cli_and_metadata_strip',
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha10_anonymize_status_and_compare_modes',
-     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha12_stream_edit_preview_all_and_offsets'],
+     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha12_stream_edit_preview_all_and_offsets',
+     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha13_backend_registry_and_engine_cli'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_patch_ops'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_native_tables', 'tests.test_metadata'],
     ['python3', '-m', 'coverage', 'combine'],
@@ -43,7 +44,8 @@ SOURCE_COMMANDS = [
     ['python3', 'golden_tests.py'],
     ['python3', 'corpus_runner.py'],
     ['python3', 'corpus_runner.py', 'report', 'corpus_results/summary.json', 'corpus_results/report.html'],
-    ['python3', 'excel_ir_cli.py', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_inspect.json'],
+    ['python3', 'excel_ir_cli.py', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_inspect.json', '--engine', 'openpyxl'],
+    ['python3', 'excel_ir_cli.py', 'engines'],
     ['python3', 'excel_ir_cli.py', 'compare-ir', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_compare_ir.json'],
     ['python3', 'excel_ir_cli.py', 'compare-ir', '--semantic-only', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_compare_ir_semantic.json'],
     ['python3', 'excel_ir_cli.py', 'anonymize', 'tests/fixtures/complex_report.xlsx', 'ci_anonymized.xlsx'],
@@ -55,6 +57,7 @@ SOURCE_COMMANDS = [
 
 INSTALLED_COMMANDS = [
     ['excel-ir', 'doctor'],
+    ['excel-ir', 'engines'],
     ['python3', '-m', 'excel_ir_mvp', 'doctor'],
     ['excel-ir', 'validate', 'ir', 'tests/fixtures/complex_ir_v07.json'],
     ['excel-ir', 'validate', 'patch', 'tests/fixtures/v08_patch.json'],
@@ -64,7 +67,7 @@ INSTALLED_COMMANDS = [
     ['excel-ir', 'metadata', 'verify', 'ci_installed_metadata.json'],
     ['excel-ir', 'metadata', 'repair', 'ci_installed_repaired.xlsx', '--from-xlsx', 'tests/fixtures/complex_report.xlsx'],
     ['excel-ir', 'metadata', 'verify', '--from-xlsx', 'ci_installed_repaired.xlsx'],
-    ['excel-ir', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_installed_inspect.json'],
+    ['excel-ir', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_installed_inspect.json', '--engine', 'openpyxl'],
     ['excel-ir', 'compare-ir', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_installed_compare_ir.json'],
     ['excel-ir', 'metadata', 'strip', 'ci_installed_stripped.xlsx', '--from-xlsx', 'ci_installed_repaired.xlsx'],
     ['excel-ir', 'metadata', 'status', 'ci_installed_repaired.xlsx'],

@@ -28,8 +28,9 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a12')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a13')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
+        self.assertIn('openpyxl', excel_ir_mvp.available_engines())
 
     def test_module_cli_smoke(self):
         self.run_cmd(['python3', '-m', 'excel_ir_mvp.excel_ir_cli', 'doctor'], env=self.module_env())
@@ -366,6 +367,33 @@ class ExcelIRMVPTests(unittest.TestCase):
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'stream-edit', src, str(ROOT / 'stream_edit_cli_all.xlsx'), '--match', '云业务', '--value', '云事业部', '--all'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         self.assertEqual(json.loads(p.stdout)['changed_count'], 3)
+    def test_alpha13_backend_registry_and_engine_cli(self):
+        from excel_ir_mvp import available_engines, engine_status
+        from excel_ir_mvp.backends import BackendUnavailableError, resolve_engine
+        from excel_ir_mvp.excel_ir_plus import inspect_workbook, parse_workbook_plus
+        self.assertIn('openpyxl', available_engines())
+        status = engine_status()
+        self.assertTrue(status['openpyxl']['available'])
+        self.assertIn('wolfxl', status)
+        ir = parse_workbook_plus(str(fixture_path('complex_report.xlsx')), engine='openpyxl')
+        self.assertEqual(ir['workbook']['engine']['engine'], 'openpyxl')
+        overview = inspect_workbook(str(fixture_path('complex_report.xlsx')), engine='auto')
+        self.assertEqual(overview['engine'], 'openpyxl')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'inspect', str(fixture_path('complex_report.xlsx')), '--engine', 'openpyxl'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(json.loads(p.stdout)['engine'], 'openpyxl')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'engines'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertIn('openpyxl', json.loads(p.stdout)['available'])
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'parse', str(fixture_path('complex_report.xlsx')), str(ROOT / 'alpha13_engine.ir.json'), '--engine', 'openpyxl'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(json.loads((ROOT / 'alpha13_engine.ir.json').read_text(encoding='utf-8'))['workbook']['engine']['engine'], 'openpyxl')
+        if not status['wolfxl']['available']:
+            with self.assertRaises(BackendUnavailableError):
+                resolve_engine('wolfxl')
+            p = subprocess.run(['python3', 'excel_ir_cli.py', 'parse', str(fixture_path('complex_report.xlsx')), str(ROOT / 'alpha13_wolfxl.ir.json'), '--engine', 'wolfxl'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.assertNotEqual(p.returncode, 0)
+            self.assertIn('wolfxl', p.stderr + p.stdout)
 
 
 if __name__ == '__main__':

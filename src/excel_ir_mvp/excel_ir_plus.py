@@ -23,10 +23,25 @@ from openpyxl.utils import get_column_letter, range_boundaries
 
 try:
     from . import excel_ir
+    from .backends import available_engines, engine_status, resolve_engine, BackendUnavailableError
     from .excel_ir import stream_find_cell_xlsx, stream_update_first_match_xlsx
 except ImportError:  # flat-source dev fallback
     import excel_ir
+    from backends import available_engines, engine_status, resolve_engine, BackendUnavailableError
     from excel_ir import stream_find_cell_xlsx, stream_update_first_match_xlsx
+
+def _load_workbook(path: str, *, engine: str | None = None, for_modify: bool = False, **kwargs: Any) -> Any:
+    backend = resolve_engine(engine)
+    if backend.name == "wolfxl" and for_modify:
+        kwargs.setdefault("modify", True)
+    return backend.module().load_workbook(path, **kwargs)
+
+
+def _engine_info(engine: str | None = None) -> Dict[str, Any]:
+    backend = resolve_engine(engine)
+    status = engine_status().get(backend.name, {})
+    return {"engine": backend.name, "engine_version": status.get("version")}
+
 
 SCHEMA_VERSION = "0.7"
 METADATA_SHEET_NAME = "_excel_ir_metadata"
@@ -710,22 +725,23 @@ def apply_sheet_extra(ws, extra: Dict[str, Any], temp_paths: List[str]) -> None:
     apply_charts(ws, extra.get("charts", []))
 
 
-def parse_workbook_plus(path: str, include_empty_styled: bool = True, infer_logic: bool = True) -> Dict[str, Any]:
-    ir = excel_ir.parse_workbook(path, include_empty_styled=include_empty_styled, infer_logic=infer_logic)
+def parse_workbook_plus(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None) -> Dict[str, Any]:
+    ir = excel_ir.parse_workbook(path, include_empty_styled=include_empty_styled, infer_logic=infer_logic, engine=engine)
     ir["schema_version"] = SCHEMA_VERSION
     ir.get("workbook", {})["sheets"] = [
         s for s in ir.get("workbook", {}).get("sheets", [])
         if s.get("name") != METADATA_SHEET_NAME
     ]
-    wb = load_workbook(path, data_only=False)
+    wb = _load_workbook(path, engine=engine, data_only=False)
     visible_worksheets = [ws for ws in wb.worksheets if ws.title != METADATA_SHEET_NAME]
     for sheet_ir, ws in zip(ir["workbook"].get("sheets", []), visible_worksheets):
         sheet_ir["extra"] = parse_sheet_extra(ws)
     apply_semantic_metadata(ir, read_semantic_metadata_sheet(wb))
+    ir.setdefault("workbook", {}).setdefault("engine", _engine_info(engine))
     return ir
 
 
-def rebuild_workbook_plus(ir: Dict[str, Any], path: str) -> None:
+def rebuild_workbook_plus(ir: Dict[str, Any], path: str, engine: str | None = None) -> None:
     # First rebuild the reversible grid/style core using v0.1 engine.
     # Charts are applied later by v0.3; remove them from the first pass to avoid
     # duplicate charts when the temporary workbook is loaded again.
@@ -737,8 +753,8 @@ def rebuild_workbook_plus(ir: Dict[str, Any], path: str) -> None:
     for s in core_ir.get("workbook", {}).get("sheets", []):
         if s.get("extra"):
             s["extra"].pop("charts", None)
-    excel_ir.rebuild_workbook(core_ir, path)
-    wb = load_workbook(path)
+    excel_ir.rebuild_workbook(core_ir, path, engine=engine)
+    wb = _load_workbook(path, engine=engine, for_modify=True)
     temp_paths: List[str] = []
     try:
         sheets_by_name = {ws.title: ws for ws in wb.worksheets}
@@ -824,24 +840,24 @@ def verify_semantic_metadata_file(path: str) -> Dict[str, Any]:
     return verify_semantic_metadata(load_json(path))
 
 
-def extract_semantic_metadata_from_xlsx(path: str) -> Dict[str, Any]:
-    wb = load_workbook(path, data_only=False)
+def extract_semantic_metadata_from_xlsx(path: str, engine: str | None = None) -> Dict[str, Any]:
+    wb = _load_workbook(path, engine=engine, data_only=False)
     metadata = read_semantic_metadata_sheet(wb)
     if metadata:
         return metadata
-    return collect_semantic_metadata(parse_workbook_plus(path))
+    return collect_semantic_metadata(parse_workbook_plus(path, engine=engine))
 
 
-def verify_semantic_metadata_xlsx(path: str) -> Dict[str, Any]:
-    metadata = extract_semantic_metadata_from_xlsx(path)
+def verify_semantic_metadata_xlsx(path: str, engine: str | None = None) -> Dict[str, Any]:
+    metadata = extract_semantic_metadata_from_xlsx(path, engine=engine)
     result = verify_semantic_metadata(metadata)
     result["source"] = "xlsx"
     return result
 
 
-def metadata_status_xlsx(path: str) -> Dict[str, Any]:
+def metadata_status_xlsx(path: str, engine: str | None = None) -> Dict[str, Any]:
     """Return hidden metadata carrier status without mutating the workbook."""
-    wb = load_workbook(path, data_only=False)
+    wb = _load_workbook(path, engine=engine, data_only=False)
     raw_present = METADATA_SHEET_NAME in wb.sheetnames
     raw = None
     sheet_state = None
@@ -854,6 +870,7 @@ def metadata_status_xlsx(path: str) -> Dict[str, Any]:
     result = {
         "ok": True,
         "path": path,
+        "engine": _engine_info(engine).get("engine"),
         "present": raw_present,
         "parsed": parsed,
         "sheet_state": sheet_state,
@@ -880,14 +897,14 @@ def _anon_text(value: str, keep_formulas: bool = True) -> str:
     return f"文本{len(value)}"
 
 
-def anonymize_workbook_xlsx(src_path: str, out_path: str, keep_formulas: bool = True) -> Dict[str, Any]:
+def anonymize_workbook_xlsx(src_path: str, out_path: str, keep_formulas: bool = True, engine: str | None = None) -> Dict[str, Any]:
     """Create a shareable workbook by replacing literal cell values.
 
     Styles, merges, dimensions, formulas (by default), validations, charts and
     other workbook structure are preserved as much as openpyxl allows. Hidden
     semantic metadata is stripped because it may contain source field labels.
     """
-    wb = load_workbook(src_path, data_only=False)
+    wb = _load_workbook(src_path, engine=engine, for_modify=True, data_only=False)
     if METADATA_SHEET_NAME in wb.sheetnames:
         del wb[METADATA_SHEET_NAME]
     changed = 0
@@ -909,44 +926,45 @@ def anonymize_workbook_xlsx(src_path: str, out_path: str, keep_formulas: bool = 
                         cell.value = new_value
                         changed += 1
     wb.save(out_path)
-    return {"ok": True, "source": src_path, "output": out_path, "cells_changed": changed, "metadata_stripped": True}
+    return {"ok": True, "source": src_path, "output": out_path, "engine": _engine_info(engine).get("engine"), "cells_changed": changed, "metadata_stripped": True}
 
 
-def strip_semantic_metadata_xlsx(src_path: str, out_path: str) -> Dict[str, Any]:
+def strip_semantic_metadata_xlsx(src_path: str, out_path: str, engine: str | None = None) -> Dict[str, Any]:
     """Copy an XLSX while removing the hidden semantic metadata carrier sheet."""
-    wb = load_workbook(src_path, data_only=False)
+    wb = _load_workbook(src_path, engine=engine, for_modify=True, data_only=False)
     removed = False
     if METADATA_SHEET_NAME in wb.sheetnames:
         del wb[METADATA_SHEET_NAME]
         removed = True
     wb.save(out_path)
-    return {"ok": True, "source": src_path, "output": out_path, "removed": removed}
+    return {"ok": True, "source": src_path, "output": out_path, "engine": _engine_info(engine).get("engine"), "removed": removed}
 
 
-def repair_semantic_metadata_xlsx(src_path: str, out_path: str) -> Dict[str, Any]:
+def repair_semantic_metadata_xlsx(src_path: str, out_path: str, engine: str | None = None) -> Dict[str, Any]:
     """Rewrite an XLSX with freshly collected semantic metadata embedded.
 
     This is intentionally conservative: it reparses the visible workbook, rebuilds
     it through the IR pipeline, and writes a new veryHidden metadata carrier with
     a fresh checksum. The source file is never modified in-place.
     """
-    ir = parse_workbook_plus(src_path)
-    rebuild_workbook_plus(ir, out_path)
-    metadata = extract_semantic_metadata_from_xlsx(out_path)
+    ir = parse_workbook_plus(src_path, engine=engine)
+    rebuild_workbook_plus(ir, out_path, engine=engine)
+    metadata = extract_semantic_metadata_from_xlsx(out_path, engine=engine)
     result = verify_semantic_metadata(metadata)
     result.update({
         "source": src_path,
         "output": out_path,
+        "engine": _engine_info(engine).get("engine"),
         "repaired": bool(result.get("ok")),
     })
     return result
 
 
-def inspect_workbook(path: str) -> Dict[str, Any]:
+def inspect_workbook(path: str, engine: str | None = None) -> Dict[str, Any]:
     """Return a compact, JSON-serializable workbook overview for CLI/users."""
-    wb = load_workbook(path, data_only=False)
+    wb = _load_workbook(path, engine=engine, data_only=False)
     hidden_metadata = read_semantic_metadata_sheet(wb)
-    ir = parse_workbook_plus(path)
+    ir = parse_workbook_plus(path, engine=engine)
     sheets = []
     total_cells = 0
     total_tables = 0
@@ -983,6 +1001,7 @@ def inspect_workbook(path: str) -> Dict[str, Any]:
     return _strip_none({
         "ok": True,
         "path": path,
+        "engine": _engine_info(engine).get("engine"),
         "sheet_count": len(sheets),
         "sheets": sheets,
         "totals": {
@@ -1230,9 +1249,9 @@ def compare_ir_files(a_path: str, b_path: str, mode: str = "full") -> Dict[str, 
     return compare_ir(load_json(a_path), load_json(b_path), mode=mode)
 
 
-def diff_workbooks_plus(a: str, b: str) -> Dict[str, Any]:
-    ia = canonical_for_diff(parse_workbook_plus(a, infer_logic=False))
-    ib = canonical_for_diff(parse_workbook_plus(b, infer_logic=False))
+def diff_workbooks_plus(a: str, b: str, engine: str | None = None) -> Dict[str, Any]:
+    ia = canonical_for_diff(parse_workbook_plus(a, infer_logic=False, engine=engine))
+    ib = canonical_for_diff(parse_workbook_plus(b, infer_logic=False, engine=engine))
     if ia == ib:
         return {"diff_count": 0, "diffs": [], "truncated": False}
     diffs: List[Dict[str, Any]] = []
@@ -1284,30 +1303,33 @@ def main() -> None:
     p_parse.add_argument("input")
     p_parse.add_argument("output")
     p_parse.add_argument("--no-logic", action="store_true")
+    p_parse.add_argument("--engine", default="openpyxl", choices=["openpyxl", "wolfxl", "auto"])
 
     p_rebuild = sub.add_parser("rebuild")
     p_rebuild.add_argument("input_json")
     p_rebuild.add_argument("output_xlsx")
+    p_rebuild.add_argument("--engine", default="openpyxl", choices=["openpyxl", "wolfxl", "auto"])
 
     p_diff = sub.add_parser("diff")
     p_diff.add_argument("a")
     p_diff.add_argument("b")
     p_diff.add_argument("output_json", nargs="?")
+    p_diff.add_argument("--engine", default="openpyxl", choices=["openpyxl", "wolfxl", "auto"])
 
     p_logic = sub.add_parser("logic")
     p_logic.add_argument("input_json")
 
     args = p.parse_args()
     if args.cmd == "parse":
-        ir = parse_workbook_plus(args.input, infer_logic=not args.no_logic)
+        ir = parse_workbook_plus(args.input, infer_logic=not args.no_logic, engine=args.engine)
         save_json(ir, args.output)
         print(json.dumps({"ok": True, "schema_version": SCHEMA_VERSION, "sheets": len(ir["workbook"]["sheets"]), "styles": len(ir["workbook"]["styles"]), "output": args.output}, ensure_ascii=False))
     elif args.cmd == "rebuild":
         ir = load_json(args.input_json)
-        rebuild_workbook_plus(ir, args.output_xlsx)
+        rebuild_workbook_plus(ir, args.output_xlsx, engine=args.engine)
         print(json.dumps({"ok": True, "output": args.output_xlsx}, ensure_ascii=False))
     elif args.cmd == "diff":
-        d = diff_workbooks_plus(args.a, args.b)
+        d = diff_workbooks_plus(args.a, args.b, engine=args.engine)
         if args.output_json:
             save_json(d, args.output_json)
         print(json.dumps(d, ensure_ascii=False, indent=2))

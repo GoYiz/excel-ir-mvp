@@ -10,12 +10,37 @@ from collections import Counter, deque
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Callable
 
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 from openpyxl.cell.cell import MergedCell
 from openpyxl.styles import Alignment, Border, Color, Font, PatternFill, Protection, Side
 from openpyxl.utils import get_column_letter, range_boundaries
 
+try:
+    from .backends import resolve_engine
+except ImportError:  # flat-source dev fallback
+    from backends import resolve_engine
+
 SCHEMA_VERSION = "0.1"
+
+
+def _load_workbook(path: str, *, engine: str | None = None, **kwargs: Any) -> Any:
+    backend = resolve_engine(engine)
+    loader = getattr(backend.module(), "load_workbook")
+    return loader(path, **kwargs)
+
+
+def _new_workbook(*, engine: str | None = None) -> Workbook:
+    backend = resolve_engine(engine)
+    cls = getattr(backend.module(), "Workbook")
+    return cls()
+
+
+def _load_workbook_for_modify(path: str, *, engine: str | None = None, **kwargs: Any) -> Any:
+    backend = resolve_engine(engine)
+    loader = getattr(backend.module(), "load_workbook")
+    if backend.name == "wolfxl":
+        kwargs.setdefault("modify", True)
+    return loader(path, **kwargs)
 
 
 def _safe_get(obj: Any, attr: str) -> Any:
@@ -284,10 +309,10 @@ def _stream_cell_info(cell: Any, *, match_value: Any = None, visited: Optional[i
     return info
 
 
-def _stream_scan_cells(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, stop_after_first: bool = True, on_match: Optional[Callable[[Any, int], Optional[Dict[str, Any]]]] = None) -> Dict[str, Any]:
+def _stream_scan_cells(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, stop_after_first: bool = True, on_match: Optional[Callable[[Any, int], Optional[Dict[str, Any]]]] = None, engine: str | None = None) -> Dict[str, Any]:
     if start not in {"left", "right"}:
         raise ValueError("start must be left or right")
-    wb = load_workbook(path, data_only=False)
+    wb = _load_workbook(path, engine=engine, data_only=False)
     sheets = [wb[sheet]] if sheet else wb.worksheets
     visited = 0
     matches: List[Dict[str, Any]] = []
@@ -311,7 +336,7 @@ def _stream_scan_cells(path: str, match: Any, *, sheet: Optional[str] = None, st
     return {"ok": True, "found": bool(matches), "matches": matches, "visited_cells": visited, "stopped_reason": "end", "workbook": wb}
 
 
-def stream_find_cell_xlsx(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, offset_row: int = 0, offset_col: int = 0) -> Dict[str, Any]:
+def stream_find_cell_xlsx(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, offset_row: int = 0, offset_col: int = 0, engine: str | None = None) -> Dict[str, Any]:
     """Scan a workbook like a human and stop as soon as a cell matches.
 
     This intentionally avoids building the full IR. `start='left'` scans each row
@@ -328,7 +353,7 @@ def stream_find_cell_xlsx(path: str, match: Any, *, sheet: Optional[str] = None,
         target = cell.parent.cell(tr, tc)
         return {"anchor": _stream_cell_info(cell), "target": _stream_cell_info(target, match_value=cell.value)}
 
-    result = _stream_scan_cells(path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells, stop_after_first=True, on_match=target_info)
+    result = _stream_scan_cells(path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells, stop_after_first=True, on_match=target_info, engine=engine)
     wb = result.pop("workbook")
     if not result.get("matches"):
         return result
@@ -337,7 +362,7 @@ def stream_find_cell_xlsx(path: str, match: Any, *, sheet: Optional[str] = None,
     return result
 
 
-def stream_update_first_match_xlsx(src_path: str, out_path: str, match: Any, new_value: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, offset_row: int = 0, offset_col: int = 0, preview: bool = False, update_all: bool = False) -> Dict[str, Any]:
+def stream_update_first_match_xlsx(src_path: str, out_path: str, match: Any, new_value: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, offset_row: int = 0, offset_col: int = 0, preview: bool = False, update_all: bool = False, engine: str | None = None) -> Dict[str, Any]:
     """Find matching cells using streaming scan semantics, then update target cells."""
     changes: List[Dict[str, Any]] = []
 
@@ -353,7 +378,7 @@ def stream_update_first_match_xlsx(src_path: str, out_path: str, match: Any, new
         changes.append({"cell": target, "old_value": before, "change": change})
         return {"target": change["target"]} if (offset_row or offset_col) else {}
 
-    result = _stream_scan_cells(src_path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells, stop_after_first=not update_all, on_match=plan_change)
+    result = _stream_scan_cells(src_path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells, stop_after_first=not update_all, on_match=plan_change, engine=engine)
     wb = result.pop("workbook")
     if not changes:
         if (not preview) and src_path != out_path:
@@ -389,9 +414,9 @@ def stream_update_first_match_xlsx(src_path: str, out_path: str, match: Any, new
     return result
 
 
-def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True) -> Dict[str, Any]:
-    wb = load_workbook(path, data_only=False)
-    data_wb = load_workbook(path, data_only=True)
+def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None) -> Dict[str, Any]:
+    wb = _load_workbook(path, engine=engine, data_only=False)
+    data_wb = _load_workbook(path, engine=engine, data_only=True)
     styles: Dict[str, Dict[str, Any]] = {}
     style_ids: Dict[str, str] = {}
     sheets: List[Dict[str, Any]] = []
@@ -461,8 +486,8 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
     return {"schema_version": SCHEMA_VERSION, "workbook": {"sheets": sheets, "styles": styles}}
 
 
-def rebuild_workbook(ir: Dict[str, Any], path: str) -> None:
-    wb = Workbook()
+def rebuild_workbook(ir: Dict[str, Any], path: str, engine: str | None = None) -> None:
+    wb = _new_workbook(engine=engine)
     default = wb.active
     wb.remove(default)
     styles = ir["workbook"].get("styles", {})

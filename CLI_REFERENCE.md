@@ -8,6 +8,9 @@ excel-ir bench
 ## Workbook IR
 
 ```bash
+excel-ir engines
+excel-ir parse workbook.xlsx out.ir.json --engine openpyxl
+excel-ir parse workbook.xlsx out.ir.json --engine auto
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 总计 --value 合计
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 备注 --value 说明 --start right
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 云业务 --value 云事业部 --all

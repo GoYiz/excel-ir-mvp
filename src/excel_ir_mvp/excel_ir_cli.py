@@ -23,12 +23,15 @@ def main():
 
     p = sub.add_parser('parse')
     p.add_argument('xlsx'); p.add_argument('ir_json')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
 
     p = sub.add_parser('rebuild')
     p.add_argument('ir_json'); p.add_argument('xlsx')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
 
     p = sub.add_parser('diff')
     p.add_argument('a'); p.add_argument('b'); p.add_argument('diff_json')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
 
     p = sub.add_parser('compare-ir')
     p.add_argument('a_ir'); p.add_argument('b_ir'); p.add_argument('diff_json', nargs='?')
@@ -39,9 +42,11 @@ def main():
     p = sub.add_parser('anonymize')
     p.add_argument('xlsx'); p.add_argument('out_xlsx')
     p.add_argument('--rewrite-formulas', action='store_true')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
 
     p = sub.add_parser('inspect')
     p.add_argument('xlsx'); p.add_argument('--out')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
 
     p = sub.add_parser('stream-edit')
     p.add_argument('xlsx'); p.add_argument('out_xlsx')
@@ -56,6 +61,7 @@ def main():
     p.add_argument('--offset-col', type=int, default=0)
     p.add_argument('--preview', action='store_true')
     p.add_argument('--all', action='store_true', dest='update_all')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p.add_argument('--as-number', action='store_true')
 
     p = sub.add_parser('patch')
@@ -93,32 +99,38 @@ def main():
     p = meta_sub.add_parser('extract')
     p.add_argument('metadata_json')
     p.add_argument('--from-xlsx', dest='from_xlsx', required=True)
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p = meta_sub.add_parser('repair')
     p.add_argument('out_xlsx')
     p.add_argument('--from-xlsx', dest='from_xlsx', required=True)
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p = meta_sub.add_parser('strip')
     p.add_argument('out_xlsx')
     p.add_argument('--from-xlsx', dest='from_xlsx', required=True)
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p = meta_sub.add_parser('status')
     p.add_argument('xlsx')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p = meta_sub.add_parser('diff')
     p.add_argument('a_metadata_json'); p.add_argument('b_metadata_json'); p.add_argument('diff_json', nargs='?')
     p = meta_sub.add_parser('verify')
     p.add_argument('metadata_json', nargs='?')
     p.add_argument('--from-xlsx', dest='from_xlsx')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
 
+    sub.add_parser('engines')
     sub.add_parser('doctor')
     sub.add_parser('bench')
 
     args = ap.parse_args()
     if args.cmd == 'parse':
-        excel_ir_plus.save_json(excel_ir_plus.parse_workbook_plus(args.xlsx), args.ir_json)
+        excel_ir_plus.save_json(excel_ir_plus.parse_workbook_plus(args.xlsx, engine=args.engine), args.ir_json)
         print(json.dumps({'ok': True, 'output': args.ir_json}, ensure_ascii=False))
     elif args.cmd == 'rebuild':
-        excel_ir_plus.rebuild_workbook_plus(excel_ir_plus.load_json(args.ir_json), args.xlsx)
+        excel_ir_plus.rebuild_workbook_plus(excel_ir_plus.load_json(args.ir_json), args.xlsx, engine=args.engine)
         print(json.dumps({'ok': True, 'output': args.xlsx}, ensure_ascii=False))
     elif args.cmd == 'diff':
-        d = excel_ir_plus.diff_workbooks_plus(args.a, args.b)
+        d = excel_ir_plus.diff_workbooks_plus(args.a, args.b, engine=args.engine)
         excel_ir_plus.save_json(d, args.diff_json)
         print(json.dumps(d, ensure_ascii=False, indent=2))
     elif args.cmd == 'compare-ir':
@@ -130,10 +142,10 @@ def main():
         if not d.get('ok'):
             raise SystemExit(1)
     elif args.cmd == 'anonymize':
-        result = excel_ir_plus.anonymize_workbook_xlsx(args.xlsx, args.out_xlsx, keep_formulas=not args.rewrite_formulas)
+        result = excel_ir_plus.anonymize_workbook_xlsx(args.xlsx, args.out_xlsx, keep_formulas=not args.rewrite_formulas, engine=args.engine)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.cmd == 'inspect':
-        result = excel_ir_plus.inspect_workbook(args.xlsx)
+        result = excel_ir_plus.inspect_workbook(args.xlsx, engine=args.engine)
         if args.out:
             excel_ir_plus.save_json(result, args.out)
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -149,7 +161,7 @@ def main():
             sheet=args.sheet, start=args.start, contains=args.contains,
             case_sensitive=args.case_sensitive, max_cells=args.max_cells,
             offset_row=args.offset_row, offset_col=args.offset_col,
-            preview=args.preview, update_all=args.update_all,
+            preview=args.preview, update_all=args.update_all, engine=args.engine,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if not result.get('found'):
@@ -215,21 +227,21 @@ def main():
             excel_ir_plus.save_json(out, args.out_ir)
             print(json.dumps({'ok': True, 'output': args.out_ir}, ensure_ascii=False))
         elif args.metadata_cmd == 'extract':
-            metadata = excel_ir_plus.extract_semantic_metadata_from_xlsx(args.from_xlsx)
+            metadata = excel_ir_plus.extract_semantic_metadata_from_xlsx(args.from_xlsx, engine=args.engine)
             excel_ir_plus.save_json(metadata, args.metadata_json)
             print(json.dumps({'ok': True, 'output': args.metadata_json, 'tables': sum(len(s.get('tables', [])) for s in metadata.get('sheets', []))}, ensure_ascii=False))
         elif args.metadata_cmd == 'repair':
-            result = excel_ir_plus.repair_semantic_metadata_xlsx(args.from_xlsx, args.out_xlsx)
+            result = excel_ir_plus.repair_semantic_metadata_xlsx(args.from_xlsx, args.out_xlsx, engine=args.engine)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             if not result.get('ok'):
                 raise SystemExit(1)
         elif args.metadata_cmd == 'strip':
-            result = excel_ir_plus.strip_semantic_metadata_xlsx(args.from_xlsx, args.out_xlsx)
+            result = excel_ir_plus.strip_semantic_metadata_xlsx(args.from_xlsx, args.out_xlsx, engine=args.engine)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             if not result.get('ok'):
                 raise SystemExit(1)
         elif args.metadata_cmd == 'status':
-            print(json.dumps(excel_ir_plus.metadata_status_xlsx(args.xlsx), ensure_ascii=False, indent=2))
+            print(json.dumps(excel_ir_plus.metadata_status_xlsx(args.xlsx, engine=args.engine), ensure_ascii=False, indent=2))
         elif args.metadata_cmd == 'diff':
             d = excel_ir_plus.semantic_metadata_diff_files(args.a_metadata_json, args.b_metadata_json)
             if args.diff_json:
@@ -237,7 +249,7 @@ def main():
             print(json.dumps(d, ensure_ascii=False, indent=2))
         elif args.metadata_cmd == 'verify':
             if args.from_xlsx:
-                result = excel_ir_plus.verify_semantic_metadata_xlsx(args.from_xlsx)
+                result = excel_ir_plus.verify_semantic_metadata_xlsx(args.from_xlsx, engine=args.engine)
             else:
                 if not args.metadata_json:
                     raise SystemExit('metadata_json required unless --from-xlsx is used')
@@ -245,9 +257,11 @@ def main():
             print(json.dumps(result, ensure_ascii=False, indent=2))
             if not result.get('ok'):
                 raise SystemExit(1)
+    elif args.cmd == 'engines':
+        print(json.dumps({'ok': True, 'default': 'openpyxl', 'available': excel_ir_plus.available_engines(), 'engines': excel_ir_plus.engine_status()}, ensure_ascii=False, indent=2))
     elif args.cmd == 'doctor':
         import sys, openpyxl
-        result = {'ok': True, 'python': sys.version, 'openpyxl': openpyxl.__version__, 'project_root': str(Path(__file__).resolve().parent)}
+        result = {'ok': True, 'python': sys.version, 'openpyxl': openpyxl.__version__, 'engines': excel_ir_plus.engine_status(), 'project_root': str(Path(__file__).resolve().parent)}
         print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.cmd == 'bench':
         bench.main()
