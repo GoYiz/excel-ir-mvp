@@ -43,6 +43,17 @@ def main():
     p = sub.add_parser('inspect')
     p.add_argument('xlsx'); p.add_argument('--out')
 
+    p = sub.add_parser('stream-edit')
+    p.add_argument('xlsx'); p.add_argument('out_xlsx')
+    p.add_argument('--match', required=True)
+    p.add_argument('--value', required=True)
+    p.add_argument('--sheet')
+    p.add_argument('--start', choices=['left', 'right'], default='left')
+    p.add_argument('--contains', action='store_true')
+    p.add_argument('--case-sensitive', action='store_true')
+    p.add_argument('--max-cells', type=int)
+    p.add_argument('--as-number', action='store_true')
+
     p = sub.add_parser('patch')
     p.add_argument('ir_json'); p.add_argument('patch_json'); p.add_argument('out_ir', nargs='?')
     p.add_argument('--dry-run', action='store_true'); p.add_argument('--plan'); p.add_argument('--log')
@@ -122,6 +133,21 @@ def main():
         if args.out:
             excel_ir_plus.save_json(result, args.out)
         print(json.dumps(result, ensure_ascii=False, indent=2))
+    elif args.cmd == 'stream-edit':
+        value = args.value
+        if args.as_number:
+            try:
+                value = float(value) if ('.' in value) else int(value)
+            except ValueError:
+                raise SystemExit('--as-number requires a numeric --value')
+        result = excel_ir_plus.stream_update_first_match_xlsx(
+            args.xlsx, args.out_xlsx, args.match, value,
+            sheet=args.sheet, start=args.start, contains=args.contains,
+            case_sensitive=args.case_sensitive, max_cells=args.max_cells,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if not result.get('found'):
+            raise SystemExit(1)
     elif args.cmd == 'patch':
         ir = ir_patch.load_json(args.ir_json); patch = ir_patch.load_json(args.patch_json)
         plan = ir_patch.dry_run(ir, patch)

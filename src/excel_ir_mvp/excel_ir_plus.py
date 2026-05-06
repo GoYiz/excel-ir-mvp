@@ -23,8 +23,10 @@ from openpyxl.utils import get_column_letter, range_boundaries
 
 try:
     from . import excel_ir
+    from .excel_ir import stream_find_cell_xlsx, stream_update_first_match_xlsx
 except ImportError:  # flat-source dev fallback
     import excel_ir
+    from excel_ir import stream_find_cell_xlsx, stream_update_first_match_xlsx
 
 SCHEMA_VERSION = "0.7"
 METADATA_SHEET_NAME = "_excel_ir_metadata"

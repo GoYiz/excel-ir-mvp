@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a10')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a11')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
@@ -301,6 +301,31 @@ class ExcelIRMVPTests(unittest.TestCase):
         self.assertNotEqual(p.returncode, 0)
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'compare-ir', '--structural-only', str(ir_a), str(ir_b)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+    def test_stream_edit_and_formula_computed_values(self):
+        from openpyxl import load_workbook
+        from excel_ir_mvp.excel_ir import stream_find_cell_xlsx, stream_update_first_match_xlsx
+        from excel_ir_mvp.excel_ir_plus import parse_workbook_plus
+        ir = parse_workbook_plus(str(fixture_path('complex_report.xlsx')))
+        formula_cells = [c for s in ir['workbook']['sheets'] for c in s['cells'].values() if c.get('data_type') == 'f']
+        self.assertTrue(formula_cells)
+        self.assertTrue(all('computed_value' in c for c in formula_cells))
+        found_left = stream_find_cell_xlsx(str(fixture_path('complex_report.xlsx')), '总计', start='left')
+        self.assertEqual(found_left['coord'], 'A12')
+        self.assertLess(found_left['visited_cells'], 200)
+        found_right = stream_find_cell_xlsx(str(fixture_path('complex_report.xlsx')), '备注', start='right')
+        self.assertEqual(found_right['coord'], 'L6')
+        self.assertLess(found_right['visited_cells'], found_left['visited_cells'])
+        out = ROOT / 'stream_edit_out.xlsx'
+        result = stream_update_first_match_xlsx(str(fixture_path('complex_report.xlsx')), str(out), '总计', '合计', start='left')
+        self.assertTrue(result['updated'])
+        self.assertEqual(result['coord'], 'A12')
+        self.assertEqual(load_workbook(out)['经营驾驶舱']['A12'].value, '合计')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'stream-edit', str(fixture_path('complex_report.xlsx')), str(ROOT / 'stream_edit_cli.xlsx'), '--match', '总计', '--value', '合计'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertLess(json.loads(p.stdout)['visited_cells'], 200)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'stream-edit', str(fixture_path('complex_report.xlsx')), str(ROOT / 'stream_edit_missing.xlsx'), '--match', 'NOT_FOUND', '--value', 'x', '--max-cells', '5'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertEqual(json.loads(p.stdout)['stopped_reason'], 'max_cells')
 
 
 if __name__ == '__main__':

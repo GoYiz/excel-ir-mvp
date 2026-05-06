@@ -8,6 +8,8 @@ excel-ir bench
 ## Workbook IR
 
 ```bash
+excel-ir stream-edit workbook.xlsx edited.xlsx --match 总计 --value 合计
+excel-ir stream-edit workbook.xlsx edited.xlsx --match 备注 --value 说明 --start right
 excel-ir inspect workbook.xlsx --out inspect.json
 excel-ir anonymize workbook.xlsx anonymized.xlsx
 excel-ir anonymize workbook.xlsx anonymized.xlsx --rewrite-formulas

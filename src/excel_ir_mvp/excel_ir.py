@@ -5,6 +5,7 @@ import copy
 import json
 import math
 import re
+import shutil
 from collections import Counter, deque
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -254,13 +255,71 @@ def is_cell_material(cell) -> bool:
     return False
 
 
+def _stream_match(value: Any, match: Any, contains: bool = False, case_sensitive: bool = False) -> bool:
+    if isinstance(value, dict):
+        value = value.get("iso")
+    if contains:
+        left = "" if value is None else str(value)
+        right = "" if match is None else str(match)
+        if not case_sensitive:
+            left, right = left.lower(), right.lower()
+        return right in left
+    if isinstance(value, str) and isinstance(match, str) and not case_sensitive:
+        return value.lower() == match.lower()
+    return value == match
+
+
+def stream_find_cell_xlsx(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None) -> Dict[str, Any]:
+    """Scan a workbook like a human and stop as soon as a cell matches.
+
+    This intentionally avoids building the full IR. `start='left'` scans each row
+    left-to-right; `start='right'` scans each row right-to-left.
+    """
+    if start not in {"left", "right"}:
+        raise ValueError("start must be left or right")
+    wb = load_workbook(path, data_only=False)
+    sheets = [wb[sheet]] if sheet else wb.worksheets
+    visited = 0
+    for ws in sheets:
+        for r in range(1, ws.max_row + 1):
+            cols = range(1, ws.max_column + 1) if start == "left" else range(ws.max_column, 0, -1)
+            for c in cols:
+                visited += 1
+                if max_cells is not None and visited > max_cells:
+                    return {"ok": False, "found": False, "visited_cells": visited - 1, "stopped_reason": "max_cells"}
+                cell = ws.cell(r, c)
+                if _stream_match(cell.value, match, contains=contains, case_sensitive=case_sensitive):
+                    return {"ok": True, "found": True, "sheet": ws.title, "coord": cell.coordinate, "row": r, "col": c, "value": normalized_value(cell.value), "visited_cells": visited, "stopped_reason": "found"}
+    return {"ok": True, "found": False, "visited_cells": visited, "stopped_reason": "end"}
+
+
+def stream_update_first_match_xlsx(src_path: str, out_path: str, match: Any, new_value: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None) -> Dict[str, Any]:
+    """Find the first matching cell using streaming scan semantics, then update it."""
+    found = stream_find_cell_xlsx(src_path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells)
+    if not found.get("found"):
+        if src_path != out_path:
+            shutil.copyfile(src_path, out_path)
+        found.update({"updated": False, "output": out_path})
+        return found
+    wb = load_workbook(src_path, data_only=False)
+    ws = wb[found["sheet"]]
+    cell = ws[found["coord"]]
+    old_value = cell.value
+    cell.value = denormalize_value(new_value)
+    wb.save(out_path)
+    found.update({"updated": True, "output": out_path, "old_value": normalized_value(old_value), "new_value": normalized_value(new_value)})
+    return found
+
+
 def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True) -> Dict[str, Any]:
     wb = load_workbook(path, data_only=False)
+    data_wb = load_workbook(path, data_only=True)
     styles: Dict[str, Dict[str, Any]] = {}
     style_ids: Dict[str, str] = {}
     sheets: List[Dict[str, Any]] = []
 
     for ws in wb.worksheets:
+        data_ws = data_wb[ws.title] if ws.title in data_wb.sheetnames else None
         cells: Dict[str, Dict[str, Any]] = {}
         for row in ws.iter_rows():
             for cell in row:
@@ -281,11 +340,16 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
                     "data_type": cell.data_type,
                     "style_id": style_ids[skey],
                 }
+                if cell.data_type == "f" and data_ws is not None:
+                    entry["computed_value"] = normalized_value(data_ws[cell.coordinate].value)
                 if cell.hyperlink:
                     entry["hyperlink"] = cell.hyperlink.target
                 if cell.comment:
                     entry["comment"] = {"text": cell.comment.text, "author": cell.comment.author}
-                cells[cell.coordinate] = _strip_none(entry)
+                out_entry = _strip_none(entry)
+                if cell.data_type == "f" and "computed_value" not in out_entry:
+                    out_entry["computed_value"] = entry.get("computed_value")
+                cells[cell.coordinate] = out_entry
 
         rows: Dict[str, Dict[str, Any]] = {}
         for idx, dim in ws.row_dimensions.items():

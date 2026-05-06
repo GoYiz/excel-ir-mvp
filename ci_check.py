@@ -46,7 +46,8 @@ SOURCE_COMMANDS = [
     ['python3', 'excel_ir_cli.py', 'compare-ir', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_compare_ir.json'],
     ['python3', 'excel_ir_cli.py', 'compare-ir', '--semantic-only', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_compare_ir_semantic.json'],
     ['python3', 'excel_ir_cli.py', 'anonymize', 'tests/fixtures/complex_report.xlsx', 'ci_anonymized.xlsx'],
-    ['python3', 'excel_ir_cli.py', 'metadata', 'status', 'ci_anonymized.xlsx'],
+    ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit.xlsx', '--match', '总计', '--value', '合计'],
+    ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit_right.xlsx', '--match', '备注', '--value', '说明', '--start', 'right'],
 ]
 
 INSTALLED_COMMANDS = [
@@ -66,6 +67,7 @@ INSTALLED_COMMANDS = [
     ['excel-ir', 'metadata', 'status', 'ci_installed_repaired.xlsx'],
     ['excel-ir', 'compare-ir', '--structural-only', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_installed_compare_ir_structural.json'],
     ['excel-ir', 'anonymize', 'tests/fixtures/complex_report.xlsx', 'ci_installed_anonymized.xlsx'],
+    ['excel-ir', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_installed_stream_edit.xlsx', '--match', '总计', '--value', '合计'],
 ]
 
 
