@@ -32,7 +32,8 @@ SOURCE_COMMANDS = [
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_validate',
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_package_corpus_runner_helpers',
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_compare_ir_cli_and_metadata_strip',
-     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha10_anonymize_status_and_compare_modes'],
+     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha10_anonymize_status_and_compare_modes',
+     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha12_stream_edit_preview_all_and_offsets'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_patch_ops'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_native_tables', 'tests.test_metadata'],
     ['python3', '-m', 'coverage', 'combine'],
@@ -48,6 +49,8 @@ SOURCE_COMMANDS = [
     ['python3', 'excel_ir_cli.py', 'anonymize', 'tests/fixtures/complex_report.xlsx', 'ci_anonymized.xlsx'],
     ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit.xlsx', '--match', '总计', '--value', '合计'],
     ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit_right.xlsx', '--match', '备注', '--value', '说明', '--start', 'right'],
+    ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit_preview.xlsx', '--match', '业务线', '--value', '收入本月', '--offset-row', '1', '--offset-col', '2', '--preview'],
+    ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit_all.xlsx', '--match', '云业务', '--value', '云事业部', '--all'],
 ]
 
 INSTALLED_COMMANDS = [
@@ -68,6 +71,7 @@ INSTALLED_COMMANDS = [
     ['excel-ir', 'compare-ir', '--structural-only', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_installed_compare_ir_structural.json'],
     ['excel-ir', 'anonymize', 'tests/fixtures/complex_report.xlsx', 'ci_installed_anonymized.xlsx'],
     ['excel-ir', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_installed_stream_edit.xlsx', '--match', '总计', '--value', '合计'],
+    ['excel-ir', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_installed_stream_edit_preview.xlsx', '--match', '业务线', '--value', '收入本月', '--offset-row', '1', '--offset-col', '2', '--preview'],
 ]
 
 

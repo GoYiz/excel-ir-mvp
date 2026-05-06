@@ -10,6 +10,8 @@ excel-ir bench
 ```bash
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 总计 --value 合计
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 备注 --value 说明 --start right
+excel-ir stream-edit workbook.xlsx edited.xlsx --match 云业务 --value 云事业部 --all
+excel-ir stream-edit workbook.xlsx ignored.xlsx --match 业务线 --value 收入本月 --offset-row 1 --offset-col 2 --preview
 excel-ir inspect workbook.xlsx --out inspect.json
 excel-ir anonymize workbook.xlsx anonymized.xlsx
 excel-ir anonymize workbook.xlsx anonymized.xlsx --rewrite-formulas

@@ -52,6 +52,10 @@ def main():
     p.add_argument('--contains', action='store_true')
     p.add_argument('--case-sensitive', action='store_true')
     p.add_argument('--max-cells', type=int)
+    p.add_argument('--offset-row', type=int, default=0)
+    p.add_argument('--offset-col', type=int, default=0)
+    p.add_argument('--preview', action='store_true')
+    p.add_argument('--all', action='store_true', dest='update_all')
     p.add_argument('--as-number', action='store_true')
 
     p = sub.add_parser('patch')
@@ -144,6 +148,8 @@ def main():
             args.xlsx, args.out_xlsx, args.match, value,
             sheet=args.sheet, start=args.start, contains=args.contains,
             case_sensitive=args.case_sensitive, max_cells=args.max_cells,
+            offset_row=args.offset_row, offset_col=args.offset_col,
+            preview=args.preview, update_all=args.update_all,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if not result.get('found'):

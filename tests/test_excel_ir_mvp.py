@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a11')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a12')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
 
     def test_module_cli_smoke(self):
@@ -309,6 +309,7 @@ class ExcelIRMVPTests(unittest.TestCase):
         formula_cells = [c for s in ir['workbook']['sheets'] for c in s['cells'].values() if c.get('data_type') == 'f']
         self.assertTrue(formula_cells)
         self.assertTrue(all('computed_value' in c for c in formula_cells))
+        self.assertTrue(all(c.get('computed_value_source') == 'xlsx_cached_value' for c in formula_cells))
         found_left = stream_find_cell_xlsx(str(fixture_path('complex_report.xlsx')), '总计', start='left')
         self.assertEqual(found_left['coord'], 'A12')
         self.assertLess(found_left['visited_cells'], 200)
@@ -326,6 +327,45 @@ class ExcelIRMVPTests(unittest.TestCase):
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'stream-edit', str(fixture_path('complex_report.xlsx')), str(ROOT / 'stream_edit_missing.xlsx'), '--match', 'NOT_FOUND', '--value', 'x', '--max-cells', '5'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertNotEqual(p.returncode, 0)
         self.assertEqual(json.loads(p.stdout)['stopped_reason'], 'max_cells')
+
+    def test_alpha12_stream_edit_preview_all_and_offsets(self):
+        from openpyxl import load_workbook
+        from excel_ir_mvp.excel_ir import stream_find_cell_xlsx, stream_update_first_match_xlsx
+        src = str(fixture_path('complex_report.xlsx'))
+        preview_out = ROOT / 'stream_edit_preview_should_not_exist.xlsx'
+        if preview_out.exists():
+            preview_out.unlink()
+        result = stream_update_first_match_xlsx(src, str(preview_out), '云业务', '云产品线', offset_col=1, preview=True)
+        self.assertTrue(result['found'])
+        self.assertFalse(result['updated'])
+        self.assertTrue(result['preview'])
+        self.assertEqual(result['target_coord'], 'B7')
+        self.assertEqual(result['old_value'], '华东')
+        self.assertFalse(preview_out.exists())
+        out = ROOT / 'stream_edit_offset.xlsx'
+        result = stream_update_first_match_xlsx(src, str(out), '云业务', '华东改', offset_col=1)
+        self.assertTrue(result['updated'])
+        self.assertEqual(load_workbook(out)['经营驾驶舱']['B7'].value, '华东改')
+        self.assertEqual(load_workbook(out)['经营驾驶舱']['A7'].value, '云业务')
+        out_all = ROOT / 'stream_edit_all.xlsx'
+        result = stream_update_first_match_xlsx(src, str(out_all), '云业务', '云事业部', update_all=True)
+        self.assertEqual(result['changed_count'], 3)
+        ws = load_workbook(out_all)['经营驾驶舱']
+        self.assertEqual(ws['A7'].value, '云事业部')
+        self.assertEqual(ws['A8'].value, '云事业部')
+        self.assertEqual(ws['B16'].value, '云事业部')
+        found = stream_find_cell_xlsx(src, '业务线', offset_row=1, offset_col=2)
+        self.assertEqual(found['coord'], 'A5')
+        self.assertEqual(found['target']['coord'], 'C6')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'stream-edit', src, str(ROOT / 'stream_edit_cli_preview.xlsx'), '--match', '业务线', '--value', '收入本月', '--offset-row', '1', '--offset-col', '2', '--preview'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        data = json.loads(p.stdout)
+        self.assertTrue(data['preview'])
+        self.assertFalse(data['updated'])
+        self.assertEqual(data['target_coord'], 'C6')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'stream-edit', src, str(ROOT / 'stream_edit_cli_all.xlsx'), '--match', '云业务', '--value', '云事业部', '--all'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(json.loads(p.stdout)['changed_count'], 3)
 
 
 if __name__ == '__main__':

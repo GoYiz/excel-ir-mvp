@@ -7,7 +7,7 @@ Python prototype for parsing complex human-authored Excel reports into an abstra
 
 Repository: https://github.com/GoYiz/excel-ir-mvp
 
-Current prerelease: **2.0.0a11**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
+Current prerelease: **2.0.0a12**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
 
 ## Install
 
@@ -22,6 +22,8 @@ python3 -m pip install -e .
 ```bash
 excel-ir doctor
 excel-ir stream-edit tests/fixtures/complex_report.xlsx edited.xlsx --match 总计 --value 合计
+excel-ir stream-edit tests/fixtures/complex_report.xlsx edited.xlsx --match 云业务 --value 云事业部 --all
+excel-ir stream-edit tests/fixtures/complex_report.xlsx ignored.xlsx --match 业务线 --value 收入本月 --offset-row 1 --offset-col 2 --preview
 excel-ir inspect tests/fixtures/complex_report.xlsx --out inspect.json
 excel-ir parse tests/fixtures/complex_report.xlsx out.ir.json
 excel-ir rebuild out.ir.json rebuilt.xlsx

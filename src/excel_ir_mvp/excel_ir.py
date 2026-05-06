@@ -8,7 +8,7 @@ import re
 import shutil
 from collections import Counter, deque
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Callable
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.cell.cell import MergedCell
@@ -269,46 +269,124 @@ def _stream_match(value: Any, match: Any, contains: bool = False, case_sensitive
     return value == match
 
 
-def stream_find_cell_xlsx(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None) -> Dict[str, Any]:
-    """Scan a workbook like a human and stop as soon as a cell matches.
+def _stream_cell_info(cell: Any, *, match_value: Any = None, visited: Optional[int] = None) -> Dict[str, Any]:
+    info = {
+        "sheet": cell.parent.title,
+        "coord": cell.coordinate,
+        "row": cell.row,
+        "col": cell.column,
+        "value": normalized_value(cell.value),
+    }
+    if match_value is not None:
+        info["match_value"] = normalized_value(match_value)
+    if visited is not None:
+        info["visited_cells"] = visited
+    return info
 
-    This intentionally avoids building the full IR. `start='left'` scans each row
-    left-to-right; `start='right'` scans each row right-to-left.
-    """
+
+def _stream_scan_cells(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, stop_after_first: bool = True, on_match: Optional[Callable[[Any, int], Optional[Dict[str, Any]]]] = None) -> Dict[str, Any]:
     if start not in {"left", "right"}:
         raise ValueError("start must be left or right")
     wb = load_workbook(path, data_only=False)
     sheets = [wb[sheet]] if sheet else wb.worksheets
     visited = 0
+    matches: List[Dict[str, Any]] = []
     for ws in sheets:
         for r in range(1, ws.max_row + 1):
             cols = range(1, ws.max_column + 1) if start == "left" else range(ws.max_column, 0, -1)
             for c in cols:
                 visited += 1
                 if max_cells is not None and visited > max_cells:
-                    return {"ok": False, "found": False, "visited_cells": visited - 1, "stopped_reason": "max_cells"}
+                    return {"ok": False, "found": bool(matches), "matches": matches, "visited_cells": visited - 1, "stopped_reason": "max_cells", "workbook": wb}
                 cell = ws.cell(r, c)
                 if _stream_match(cell.value, match, contains=contains, case_sensitive=case_sensitive):
-                    return {"ok": True, "found": True, "sheet": ws.title, "coord": cell.coordinate, "row": r, "col": c, "value": normalized_value(cell.value), "visited_cells": visited, "stopped_reason": "found"}
-    return {"ok": True, "found": False, "visited_cells": visited, "stopped_reason": "end"}
+                    info = _stream_cell_info(cell, visited=visited)
+                    if on_match:
+                        extra = on_match(cell, visited)
+                        if extra:
+                            info.update(extra)
+                    matches.append(info)
+                    if stop_after_first:
+                        return {"ok": True, "found": True, "matches": matches, "visited_cells": visited, "stopped_reason": "found", "workbook": wb}
+    return {"ok": True, "found": bool(matches), "matches": matches, "visited_cells": visited, "stopped_reason": "end", "workbook": wb}
 
 
-def stream_update_first_match_xlsx(src_path: str, out_path: str, match: Any, new_value: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None) -> Dict[str, Any]:
-    """Find the first matching cell using streaming scan semantics, then update it."""
-    found = stream_find_cell_xlsx(src_path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells)
-    if not found.get("found"):
-        if src_path != out_path:
+def stream_find_cell_xlsx(path: str, match: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, offset_row: int = 0, offset_col: int = 0) -> Dict[str, Any]:
+    """Scan a workbook like a human and stop as soon as a cell matches.
+
+    This intentionally avoids building the full IR. `start='left'` scans each row
+    left-to-right; `start='right'` scans each row right-to-left. Optional offsets
+    return the target cell relative to the matched anchor.
+    """
+    def target_info(cell: Any, visited: int) -> Dict[str, Any]:
+        if not offset_row and not offset_col:
+            return {}
+        tr = cell.row + offset_row
+        tc = cell.column + offset_col
+        if tr < 1 or tc < 1:
+            raise ValueError("offset target is outside worksheet bounds")
+        target = cell.parent.cell(tr, tc)
+        return {"anchor": _stream_cell_info(cell), "target": _stream_cell_info(target, match_value=cell.value)}
+
+    result = _stream_scan_cells(path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells, stop_after_first=True, on_match=target_info)
+    wb = result.pop("workbook")
+    if not result.get("matches"):
+        return result
+    first = result.pop("matches")[0]
+    result.update(first)
+    return result
+
+
+def stream_update_first_match_xlsx(src_path: str, out_path: str, match: Any, new_value: Any, *, sheet: Optional[str] = None, start: str = "left", contains: bool = False, case_sensitive: bool = False, max_cells: Optional[int] = None, offset_row: int = 0, offset_col: int = 0, preview: bool = False, update_all: bool = False) -> Dict[str, Any]:
+    """Find matching cells using streaming scan semantics, then update target cells."""
+    changes: List[Dict[str, Any]] = []
+
+    def plan_change(cell: Any, visited: int) -> Dict[str, Any]:
+        target = cell.parent.cell(cell.row + offset_row, cell.column + offset_col)
+        before = target.value
+        change = {
+            "anchor": _stream_cell_info(cell, visited=visited),
+            "target": _stream_cell_info(target, match_value=cell.value),
+            "old_value": normalized_value(before),
+            "new_value": normalized_value(new_value),
+        }
+        changes.append({"cell": target, "old_value": before, "change": change})
+        return {"target": change["target"]} if (offset_row or offset_col) else {}
+
+    result = _stream_scan_cells(src_path, match, sheet=sheet, start=start, contains=contains, case_sensitive=case_sensitive, max_cells=max_cells, stop_after_first=not update_all, on_match=plan_change)
+    wb = result.pop("workbook")
+    if not changes:
+        if (not preview) and src_path != out_path:
             shutil.copyfile(src_path, out_path)
-        found.update({"updated": False, "output": out_path})
-        return found
-    wb = load_workbook(src_path, data_only=False)
-    ws = wb[found["sheet"]]
-    cell = ws[found["coord"]]
-    old_value = cell.value
-    cell.value = denormalize_value(new_value)
-    wb.save(out_path)
-    found.update({"updated": True, "output": out_path, "old_value": normalized_value(old_value), "new_value": normalized_value(new_value)})
-    return found
+        result.update({"updated": False, "preview": preview, "output": out_path, "changes": []})
+        return result
+    if not preview:
+        for item in changes:
+            item["cell"].value = denormalize_value(new_value)
+        wb.save(out_path)
+    result.update({
+        "updated": not preview,
+        "preview": preview,
+        "output": None if preview else out_path,
+        "changed_count": len(changes),
+        "changes": [item["change"] for item in changes],
+    })
+    if len(changes) == 1:
+        change = changes[0]["change"]
+        anchor = change["anchor"]
+        target = change["target"]
+        result.update({
+            "sheet": anchor["sheet"],
+            "coord": anchor["coord"],
+            "row": anchor["row"],
+            "col": anchor["col"],
+            "value": anchor["value"],
+            "target_sheet": target["sheet"],
+            "target_coord": target["coord"],
+            "old_value": change["old_value"],
+            "new_value": change["new_value"],
+        })
+    return result
 
 
 def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True) -> Dict[str, Any]:
@@ -342,6 +420,7 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
                 }
                 if cell.data_type == "f" and data_ws is not None:
                     entry["computed_value"] = normalized_value(data_ws[cell.coordinate].value)
+                    entry["computed_value_source"] = "xlsx_cached_value"
                 if cell.hyperlink:
                     entry["hyperlink"] = cell.hyperlink.target
                 if cell.comment:
@@ -349,6 +428,8 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
                 out_entry = _strip_none(entry)
                 if cell.data_type == "f" and "computed_value" not in out_entry:
                     out_entry["computed_value"] = entry.get("computed_value")
+                if cell.data_type == "f" and "computed_value_source" not in out_entry:
+                    out_entry["computed_value_source"] = entry.get("computed_value_source") or "xlsx_cached_value"
                 cells[cell.coordinate] = out_entry
 
         rows: Dict[str, Dict[str, Any]] = {}
