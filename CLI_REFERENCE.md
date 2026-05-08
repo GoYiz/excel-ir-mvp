@@ -10,6 +10,8 @@ excel-ir bench
 ```bash
 excel-ir engines
 excel-ir parse workbook.xlsx out.ir.json --engine openpyxl
+excel-ir parse workbook.xlsx selected.ir.json --sheet Sheet1 --sheet Sheet2
+excel-ir rebuild selected.ir.json selected.xlsx --sheet Sheet1
 excel-ir parse workbook.xlsx out.ir.json --engine auto
 excel-ir header-edit workbook.xlsx edited.xlsx --headers 2026/5/8 --row-match 门店A --value 999 --as-number
 excel-ir header-edit workbook.xlsx ignored.xlsx --headers '["2026","5","8"]' --row-match 门店A --value 999 --preview

@@ -9,7 +9,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from openpyxl import load_workbook
 from openpyxl.chart import BarChart, LineChart, PieChart, Reference
@@ -78,6 +78,17 @@ def _strip_none(x: Any) -> Any:
 
 def _attrs_to_dict(obj: Any, fields: List[str]) -> Dict[str, Any]:
     return _strip_none({f: _safe_get(obj, f) for f in fields})
+
+
+def _omit_defaults_dict(data: Dict[str, Any], defaults: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: v for k, v in (data or {}).items() if v is not None and v != {} and v != [] and defaults.get(k, object()) != v}
+
+
+def _sheet_filter(sheet_names: Optional[Iterable[str]]) -> Optional[set[str]]:
+    if sheet_names is None:
+        return None
+    names = {str(s) for s in sheet_names if str(s)}
+    return names or None
 
 
 def _apply_attrs(obj: Any, data: Dict[str, Any], fields: List[str]) -> None:
@@ -640,21 +651,21 @@ def apply_charts(ws, items: List[Dict[str, Any]]) -> None:
 
 def parse_sheet_extra(ws) -> Dict[str, Any]:
     tab_color = excel_ir.color_to_dict(getattr(ws.sheet_properties, "tabColor", None))
-    sheet_view = _attrs_to_dict(ws.sheet_view, [
+    sheet_view = _omit_defaults_dict(_attrs_to_dict(ws.sheet_view, [
         "showFormulas", "showGridLines", "showRowColHeaders", "showZeros", "rightToLeft",
         "view", "topLeftCell", "zoomScale", "zoomScaleNormal",
-    ])
-    sheet_format = _attrs_to_dict(ws.sheet_format, [
+    ]), {"showFormulas": False, "showGridLines": True, "showRowColHeaders": True, "showZeros": True, "rightToLeft": False, "view": "normal", "zoomScale": 100, "zoomScaleNormal": 100})
+    sheet_format = _omit_defaults_dict(_attrs_to_dict(ws.sheet_format, [
         "baseColWidth", "defaultColWidth", "defaultRowHeight", "customHeight", "zeroHeight",
         "thickTop", "thickBottom", "outlineLevelRow", "outlineLevelCol",
-    ])
+    ]), {"baseColWidth": 8, "defaultRowHeight": 15, "customHeight": False, "zeroHeight": False, "thickTop": False, "thickBottom": False, "outlineLevelRow": 0, "outlineLevelCol": 0})
     page_margins = _attrs_to_dict(ws.page_margins, ["left", "right", "top", "bottom", "header", "footer"])
     page_setup = _attrs_to_dict(ws.page_setup, [
         "orientation", "paperSize", "scale", "fitToHeight", "fitToWidth", "firstPageNumber",
         "useFirstPageNumber", "paperHeight", "paperWidth", "pageOrder", "usePrinterDefaults",
         "blackAndWhite", "draft", "cellComments", "errors", "horizontalDpi", "verticalDpi", "copies",
     ])
-    print_options = _attrs_to_dict(ws.print_options, ["horizontalCentered", "verticalCentered", "headings", "gridLines", "gridLinesSet"])
+    print_options = _omit_defaults_dict(_attrs_to_dict(ws.print_options, ["horizontalCentered", "verticalCentered", "headings", "gridLines", "gridLinesSet"]), {"horizontalCentered": False, "verticalCentered": False, "headings": False, "gridLines": False, "gridLinesSet": True})
     protection = _attrs_to_dict(ws.protection, [
         "sheet", "objects", "scenarios", "formatCells", "formatColumns", "formatRows", "insertColumns",
         "insertRows", "insertHyperlinks", "deleteColumns", "deleteRows", "selectLockedCells",
@@ -663,7 +674,7 @@ def parse_sheet_extra(ws) -> Dict[str, Any]:
     ])
     return _strip_none({
         "schema_version": SCHEMA_VERSION,
-        "sheet_state": getattr(ws, "sheet_state", None),
+        "sheet_state": getattr(ws, "sheet_state", None) if getattr(ws, "sheet_state", None) != "visible" else None,
         "tab_color": tab_color,
         "sheet_view": sheet_view,
         "sheet_format": sheet_format,
@@ -731,27 +742,42 @@ def apply_sheet_extra(ws, extra: Dict[str, Any], temp_paths: List[str]) -> None:
     apply_charts(ws, extra.get("charts", []))
 
 
-def parse_workbook_plus(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None) -> Dict[str, Any]:
-    ir = excel_ir.parse_workbook(path, include_empty_styled=include_empty_styled, infer_logic=infer_logic, engine=engine)
+def _filter_ir_sheets(ir: Dict[str, Any], sheet_names: Optional[Iterable[str]]) -> Dict[str, Any]:
+    requested = _sheet_filter(sheet_names)
+    if requested is None:
+        return ir
+    out = copy.deepcopy(ir)
+    out.get("workbook", {})["sheets"] = [s for s in out.get("workbook", {}).get("sheets", []) if s.get("name") in requested]
+    out.get("workbook", {})["sheet_names"] = [s.get("name") for s in out.get("workbook", {}).get("sheets", [])]
+    return out
+
+
+def parse_workbook_plus(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None) -> Dict[str, Any]:
+    ir = excel_ir.parse_workbook(path, include_empty_styled=include_empty_styled, infer_logic=infer_logic, engine=engine, sheet_names=sheet_names)
     ir["schema_version"] = SCHEMA_VERSION
     ir.get("workbook", {})["sheets"] = [
         s for s in ir.get("workbook", {}).get("sheets", [])
         if s.get("name") != METADATA_SHEET_NAME
     ]
     wb = _load_workbook(path, engine=engine, data_only=False)
-    visible_worksheets = [ws for ws in wb.worksheets if ws.title != METADATA_SHEET_NAME]
+    requested_sheets = _sheet_filter(sheet_names)
+    visible_worksheets = [ws for ws in wb.worksheets if ws.title != METADATA_SHEET_NAME and (requested_sheets is None or ws.title in requested_sheets)]
     for sheet_ir, ws in zip(ir["workbook"].get("sheets", []), visible_worksheets):
         sheet_ir["extra"] = parse_sheet_extra(ws)
     apply_semantic_metadata(ir, read_semantic_metadata_sheet(wb))
     ir.setdefault("workbook", {}).setdefault("engine", _engine_info(engine))
+    ir.setdefault("workbook", {})["sheet_names"] = [s.get("name") for s in ir.get("workbook", {}).get("sheets", [])]
+    if requested_sheets is not None:
+        ir.setdefault("workbook", {})["selected_sheets"] = [s for s in ir["workbook"]["sheet_names"]]
     return ir
 
 
-def rebuild_workbook_plus(ir: Dict[str, Any], path: str, engine: str | None = None) -> None:
+def rebuild_workbook_plus(ir: Dict[str, Any], path: str, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None) -> None:
     # First rebuild the reversible grid/style core using v0.1 engine.
     # Charts are applied later by v0.3; remove them from the first pass to avoid
     # duplicate charts when the temporary workbook is loaded again.
-    core_ir = copy.deepcopy(ir)
+    requested_sheets = _sheet_filter(sheet_names)
+    core_ir = _filter_ir_sheets(copy.deepcopy(ir), requested_sheets)
     core_ir.get("workbook", {})["sheets"] = [
         s for s in core_ir.get("workbook", {}).get("sheets", [])
         if s.get("name") != METADATA_SHEET_NAME
@@ -759,12 +785,13 @@ def rebuild_workbook_plus(ir: Dict[str, Any], path: str, engine: str | None = No
     for s in core_ir.get("workbook", {}).get("sheets", []):
         if s.get("extra"):
             s["extra"].pop("charts", None)
-    excel_ir.rebuild_workbook(core_ir, path, engine=engine)
+    excel_ir.rebuild_workbook(core_ir, path, engine=engine, sheet_names=requested_sheets)
     wb = _load_workbook(path, engine=engine, for_modify=True)
     temp_paths: List[str] = []
     try:
+        selected_ir = _filter_ir_sheets(ir, requested_sheets)
         sheets_by_name = {ws.title: ws for ws in wb.worksheets}
-        for sheet_ir in ir["workbook"].get("sheets", []):
+        for sheet_ir in selected_ir["workbook"].get("sheets", []):
             if sheet_ir.get("name") == METADATA_SHEET_NAME:
                 continue
             ws = sheets_by_name.get(sheet_ir.get("name"))
@@ -781,7 +808,7 @@ def rebuild_workbook_plus(ir: Dict[str, Any], path: str, engine: str | None = No
             wb.calculation.forceFullCalc = True
         except Exception:
             pass
-        write_semantic_metadata_sheet(wb, collect_semantic_metadata(ir))
+        write_semantic_metadata_sheet(wb, collect_semantic_metadata(selected_ir))
         wb.save(path)
     finally:
         for tmp in temp_paths:
@@ -1310,11 +1337,13 @@ def main() -> None:
     p_parse.add_argument("output")
     p_parse.add_argument("--no-logic", action="store_true")
     p_parse.add_argument("--engine", default="openpyxl", choices=["openpyxl", "wolfxl", "auto"])
+    p_parse.add_argument("--sheet", action="append", dest="sheets")
 
     p_rebuild = sub.add_parser("rebuild")
     p_rebuild.add_argument("input_json")
     p_rebuild.add_argument("output_xlsx")
     p_rebuild.add_argument("--engine", default="openpyxl", choices=["openpyxl", "wolfxl", "auto"])
+    p_rebuild.add_argument("--sheet", action="append", dest="sheets")
 
     p_diff = sub.add_parser("diff")
     p_diff.add_argument("a")
@@ -1327,12 +1356,12 @@ def main() -> None:
 
     args = p.parse_args()
     if args.cmd == "parse":
-        ir = parse_workbook_plus(args.input, infer_logic=not args.no_logic, engine=args.engine)
+        ir = parse_workbook_plus(args.input, infer_logic=not args.no_logic, engine=args.engine, sheet_names=args.sheets)
         save_json(ir, args.output)
         print(json.dumps({"ok": True, "schema_version": SCHEMA_VERSION, "sheets": len(ir["workbook"]["sheets"]), "styles": len(ir["workbook"]["styles"]), "output": args.output}, ensure_ascii=False))
     elif args.cmd == "rebuild":
         ir = load_json(args.input_json)
-        rebuild_workbook_plus(ir, args.output_xlsx, engine=args.engine)
+        rebuild_workbook_plus(ir, args.output_xlsx, engine=args.engine, sheet_names=args.sheets)
         print(json.dumps({"ok": True, "output": args.output_xlsx}, ensure_ascii=False))
     elif args.cmd == "diff":
         d = diff_workbooks_plus(args.a, args.b, engine=args.engine)

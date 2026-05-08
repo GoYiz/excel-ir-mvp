@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a14')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a15')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
         self.assertIn('openpyxl', excel_ir_mvp.available_engines())
 
@@ -310,7 +310,7 @@ class ExcelIRMVPTests(unittest.TestCase):
         formula_cells = [c for s in ir['workbook']['sheets'] for c in s['cells'].values() if c.get('data_type') == 'f']
         self.assertTrue(formula_cells)
         self.assertTrue(all('computed_value' in c for c in formula_cells))
-        self.assertTrue(all(c.get('computed_value_source') == 'xlsx_cached_value' for c in formula_cells))
+        self.assertTrue(all('computed_value_source' not in c for c in formula_cells))
         found_left = stream_find_cell_xlsx(str(fixture_path('complex_report.xlsx')), '总计', start='left')
         self.assertEqual(found_left['coord'], 'A12')
         self.assertLess(found_left['visited_cells'], 200)
@@ -435,6 +435,43 @@ class ExcelIRMVPTests(unittest.TestCase):
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(path), str(ROOT / 'multi_header_cli_edit.xlsx'), '--sheet', '日期表', '--headers', '["2026","5","8"]', '--row-match', '门店A', '--value', '777', '--as-number'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         self.assertEqual(load_workbook(ROOT / 'multi_header_cli_edit.xlsx')['日期表']['C4'].value, 777)
+
+    def test_alpha15_selective_sheets_and_compact_ir(self):
+        from openpyxl import Workbook, load_workbook
+        from excel_ir_mvp.excel_ir_plus import parse_workbook_plus, rebuild_workbook_plus
+        path = ROOT / 'alpha15_multi_sheet.xlsx'
+        wb = Workbook()
+        ws1 = wb.active
+        ws1.title = 'Keep'
+        ws1['A1'] = '保留'
+        ws1['B1'] = '=1+1'
+        ws2 = wb.create_sheet('Skip')
+        ws2['A1'] = '跳过'
+        ws2.row_dimensions[1].hidden = False
+        ws2.column_dimensions['A'].hidden = False
+        wb.save(path)
+        full = parse_workbook_plus(str(path), infer_logic=False)
+        selected = parse_workbook_plus(str(path), infer_logic=False, sheet_names=['Keep'])
+        self.assertEqual([s['name'] for s in selected['workbook']['sheets']], ['Keep'])
+        self.assertEqual(selected['workbook']['selected_sheets'], ['Keep'])
+        self.assertLess(len(json.dumps(selected, ensure_ascii=False)), len(json.dumps(full, ensure_ascii=False)))
+        cells = selected['workbook']['sheets'][0]['cells']
+        self.assertIn('computed_value', cells['B1'])
+        self.assertNotIn('computed_value_source', cells['B1'])
+        style = selected['workbook']['styles'][cells['A1']['style_id']]
+        self.assertNotEqual(style.get('protection'), {'locked': True, 'hidden': False})
+        for sheet in selected['workbook']['sheets']:
+            self.assertNotIn('Skip', sheet['name'])
+        out = ROOT / 'alpha15_selected_rebuilt.xlsx'
+        rebuild_workbook_plus(full, str(out), sheet_names=['Keep'])
+        self.assertEqual(load_workbook(out).sheetnames, ['Keep'])
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'parse', str(path), str(ROOT / 'alpha15_cli_selected.ir.json'), '--sheet', 'Keep'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        parsed = json.loads((ROOT / 'alpha15_cli_selected.ir.json').read_text(encoding='utf-8'))
+        self.assertEqual([s['name'] for s in parsed['workbook']['sheets']], ['Keep'])
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'rebuild', str(ROOT / 'alpha15_cli_selected.ir.json'), str(ROOT / 'alpha15_cli_selected.xlsx'), '--sheet', 'Keep'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(load_workbook(ROOT / 'alpha15_cli_selected.xlsx').sheetnames, ['Keep'])
 
 
 if __name__ == '__main__':

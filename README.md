@@ -7,7 +7,7 @@ Python prototype for parsing complex human-authored Excel reports into an abstra
 
 Repository: https://github.com/GoYiz/excel-ir-mvp
 
-Current prerelease: **2.0.0a14**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
+Current prerelease: **2.0.0a15**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
 
 ## Install
 
@@ -23,6 +23,8 @@ python3 -m pip install -e .
 excel-ir doctor
 excel-ir engines
 excel-ir parse tests/fixtures/complex_report.xlsx out.ir.json --engine openpyxl
+excel-ir parse tests/fixtures/complex_report.xlsx selected.ir.json --sheet 经营驾驶舱
+excel-ir rebuild selected.ir.json selected.xlsx --sheet 经营驾驶舱
 excel-ir header-edit tests/fixtures/multi_header_dates.xlsx edited.xlsx --headers 2026/5/8 --row-match 门店A --value 999 --as-number
 excel-ir stream-edit tests/fixtures/complex_report.xlsx edited.xlsx --match 总计 --value 合计
 excel-ir stream-edit tests/fixtures/complex_report.xlsx edited.xlsx --match 云业务 --value 云事业部 --all
@@ -46,6 +48,7 @@ excel-ir compare-ir --structural-only a.ir.json b.ir.json structural_diff.json
 ## Docs
 
 - [Backend Engines](docs/backends.md)
+- [Selective Sheets and Compact IR](docs/selective-sheets-compact-ir.md)
 - [Multi-level Header Edits](docs/multi-header-edits.md)
 - [Streaming Edits](docs/streaming-edits.md)
 - [Native vs Semantic Tables](docs/native-vs-semantic-tables.md)

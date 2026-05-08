@@ -58,6 +58,17 @@ def _strip_none(x: Any) -> Any:
     return x
 
 
+def _omit_defaults(d: Dict[str, Any], defaults: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: v for k, v in d.items() if v is not None and v != {} and v != [] and defaults.get(k, object()) != v}
+
+
+def _sheet_filter(sheet_names: Optional[Iterable[str]]) -> Optional[set[str]]:
+    if sheet_names is None:
+        return None
+    names = {str(s) for s in sheet_names if str(s)}
+    return names or None
+
+
 def color_to_dict(c: Optional[Color]) -> Optional[Dict[str, Any]]:
     if c is None:
         return None
@@ -119,7 +130,7 @@ def side_from_dict(d: Optional[Dict[str, Any]]) -> Side:
 
 
 def font_to_dict(f: Font) -> Dict[str, Any]:
-    return _strip_none({
+    return _strip_none(_omit_defaults({
         "name": f.name,
         "sz": f.sz,
         "b": f.b,
@@ -131,7 +142,7 @@ def font_to_dict(f: Font) -> Dict[str, Any]:
         "charset": f.charset,
         "family": f.family,
         "scheme": f.scheme,
-    })
+    }, {"b": False, "i": False, "strike": False}))
 
 
 def font_from_dict(d: Dict[str, Any]) -> Font:
@@ -167,7 +178,7 @@ def fill_from_dict(d: Dict[str, Any]) -> PatternFill:
 
 
 def border_to_dict(b: Border) -> Dict[str, Any]:
-    return _strip_none({
+    return _strip_none(_omit_defaults({
         "left": side_to_dict(b.left),
         "right": side_to_dict(b.right),
         "top": side_to_dict(b.top),
@@ -176,7 +187,7 @@ def border_to_dict(b: Border) -> Dict[str, Any]:
         "diagonalUp": b.diagonalUp,
         "diagonalDown": b.diagonalDown,
         "outline": b.outline,
-    })
+    }, {"diagonalUp": False, "diagonalDown": False, "outline": True}))
 
 
 def border_from_dict(d: Dict[str, Any]) -> Border:
@@ -193,14 +204,14 @@ def border_from_dict(d: Dict[str, Any]) -> Border:
 
 
 def alignment_to_dict(a: Alignment) -> Dict[str, Any]:
-    return _strip_none({
+    return _strip_none(_omit_defaults({
         "horizontal": a.horizontal,
         "vertical": a.vertical,
         "text_rotation": a.textRotation,
         "wrap_text": a.wrap_text,
         "shrink_to_fit": a.shrink_to_fit,
         "indent": a.indent,
-    })
+    }, {"text_rotation": 0, "wrap_text": False, "shrink_to_fit": False, "indent": 0}))
 
 
 def alignment_from_dict(d: Dict[str, Any]) -> Alignment:
@@ -215,7 +226,7 @@ def alignment_from_dict(d: Dict[str, Any]) -> Alignment:
 
 
 def protection_to_dict(p: Protection) -> Dict[str, Any]:
-    return _strip_none({"locked": p.locked, "hidden": p.hidden})
+    return _strip_none(_omit_defaults({"locked": p.locked, "hidden": p.hidden}, {"locked": True, "hidden": False}))
 
 
 def protection_from_dict(d: Dict[str, Any]) -> Protection:
@@ -532,14 +543,18 @@ def update_cell_by_multi_header_xlsx(src_path: str, out_path: str, headers: List
     return result
 
 
-def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None) -> Dict[str, Any]:
+def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None) -> Dict[str, Any]:
     wb = _load_workbook(path, engine=engine, data_only=False)
     data_wb = _load_workbook(path, engine=engine, data_only=True)
     styles: Dict[str, Dict[str, Any]] = {}
     style_ids: Dict[str, str] = {}
     sheets: List[Dict[str, Any]] = []
 
+    requested_sheets = _sheet_filter(sheet_names)
+
     for ws in wb.worksheets:
+        if requested_sheets is not None and ws.title not in requested_sheets:
+            continue
         data_ws = data_wb[ws.title] if ws.title in data_wb.sheetnames else None
         cells: Dict[str, Dict[str, Any]] = {}
         for row in ws.iter_rows():
@@ -563,7 +578,6 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
                 }
                 if cell.data_type == "f" and data_ws is not None:
                     entry["computed_value"] = normalized_value(data_ws[cell.coordinate].value)
-                    entry["computed_value_source"] = "xlsx_cached_value"
                 if cell.hyperlink:
                     entry["hyperlink"] = cell.hyperlink.target
                 if cell.comment:
@@ -571,19 +585,17 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
                 out_entry = _strip_none(entry)
                 if cell.data_type == "f" and "computed_value" not in out_entry:
                     out_entry["computed_value"] = entry.get("computed_value")
-                if cell.data_type == "f" and "computed_value_source" not in out_entry:
-                    out_entry["computed_value_source"] = entry.get("computed_value_source") or "xlsx_cached_value"
                 cells[cell.coordinate] = out_entry
 
         rows: Dict[str, Dict[str, Any]] = {}
         for idx, dim in ws.row_dimensions.items():
-            d = _strip_none({"height": dim.height, "hidden": dim.hidden, "outlineLevel": dim.outlineLevel})
+            d = _strip_none(_omit_defaults({"height": dim.height, "hidden": dim.hidden, "outlineLevel": dim.outlineLevel}, {"hidden": False, "outlineLevel": 0}))
             if d:
                 rows[str(idx)] = d
 
         cols: Dict[str, Dict[str, Any]] = {}
         for key, dim in ws.column_dimensions.items():
-            d = _strip_none({"width": dim.width, "hidden": dim.hidden, "outlineLevel": dim.outlineLevel})
+            d = _strip_none(_omit_defaults({"width": dim.width, "hidden": dim.hidden, "outlineLevel": dim.outlineLevel}, {"hidden": False, "outlineLevel": 0}))
             if d:
                 cols[str(key)] = d
 
@@ -601,16 +613,19 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
             sheet["logical"] = infer_sheet_logic(sheet, styles)
         sheets.append(sheet)
 
-    return {"schema_version": SCHEMA_VERSION, "workbook": {"sheets": sheets, "styles": styles}}
+    return {"schema_version": SCHEMA_VERSION, "workbook": {"sheets": sheets, "styles": styles, "sheet_names": [s.get("name") for s in sheets]}}
 
 
-def rebuild_workbook(ir: Dict[str, Any], path: str, engine: str | None = None) -> None:
+def rebuild_workbook(ir: Dict[str, Any], path: str, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None) -> None:
     wb = _new_workbook(engine=engine)
     default = wb.active
     wb.remove(default)
     styles = ir["workbook"].get("styles", {})
+    requested_sheets = _sheet_filter(sheet_names)
 
     for sheet in ir["workbook"].get("sheets", []):
+        if requested_sheets is not None and sheet.get("name") not in requested_sheets:
+            continue
         ws = wb.create_sheet(sheet["name"])
 
         # Layout before cells.
@@ -648,6 +663,8 @@ def rebuild_workbook(ir: Dict[str, Any], path: str, engine: str | None = None) -
         if sheet.get("freeze_panes"):
             ws.freeze_panes = sheet.get("freeze_panes")
 
+    if not wb.worksheets:
+        wb.create_sheet("Sheet")
     wb.save(path)
 
 

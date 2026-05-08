@@ -10,6 +10,8 @@
       "required": ["sheets", "styles"],
       "properties": {
         "styles": {"type": "object"},
+        "sheet_names": {"type": "array", "items": {"type": "string"}},
+        "selected_sheets": {"type": "array", "items": {"type": "string"}},
         "patch_history": {"type": "array"},
         "semantic_metadata": {
           "type": "object",

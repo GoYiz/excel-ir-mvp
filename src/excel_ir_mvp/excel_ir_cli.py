@@ -55,10 +55,12 @@ def main():
     p = sub.add_parser('parse')
     p.add_argument('xlsx'); p.add_argument('ir_json')
     p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
+    p.add_argument('--sheet', action='append', dest='sheets', help='Sheet name to parse; repeat for multiple sheets')
 
     p = sub.add_parser('rebuild')
     p.add_argument('ir_json'); p.add_argument('xlsx')
     p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
+    p.add_argument('--sheet', action='append', dest='sheets', help='Sheet name to rebuild; repeat for multiple sheets')
 
     p = sub.add_parser('diff')
     p.add_argument('a'); p.add_argument('b'); p.add_argument('diff_json')
@@ -174,10 +176,10 @@ def main():
 
     args = ap.parse_args()
     if args.cmd == 'parse':
-        excel_ir_plus.save_json(excel_ir_plus.parse_workbook_plus(args.xlsx, engine=args.engine), args.ir_json)
+        excel_ir_plus.save_json(excel_ir_plus.parse_workbook_plus(args.xlsx, engine=args.engine, sheet_names=args.sheets), args.ir_json)
         print(json.dumps({'ok': True, 'output': args.ir_json}, ensure_ascii=False))
     elif args.cmd == 'rebuild':
-        excel_ir_plus.rebuild_workbook_plus(excel_ir_plus.load_json(args.ir_json), args.xlsx, engine=args.engine)
+        excel_ir_plus.rebuild_workbook_plus(excel_ir_plus.load_json(args.ir_json), args.xlsx, engine=args.engine, sheet_names=args.sheets)
         print(json.dumps({'ok': True, 'output': args.xlsx}, ensure_ascii=False))
     elif args.cmd == 'diff':
         d = excel_ir_plus.diff_workbooks_plus(args.a, args.b, engine=args.engine)
