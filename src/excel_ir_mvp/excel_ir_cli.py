@@ -17,6 +17,37 @@ except ImportError:  # flat-source dev fallback
     import field_map_review_app
 
 
+def _parse_header_path(text):
+    try:
+        data = json.loads(text)
+        if isinstance(data, list):
+            return data
+    except Exception:
+        pass
+    return [x for x in str(text).split('/') if x != '']
+
+
+def _parse_row_range(text):
+    parts = str(text).split(':', 1)
+    if len(parts) == 1:
+        start = end = int(parts[0])
+    else:
+        start, end = int(parts[0]), int(parts[1])
+    if start < 1 or end < start:
+        raise ValueError('header rows must be START:END')
+    return start, end
+
+
+def _parse_col_arg(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    if text.isdigit():
+        return int(text)
+    from openpyxl.utils import column_index_from_string
+    return column_index_from_string(text.upper())
+
+
 def main():
     ap = argparse.ArgumentParser(prog='excel-ir', description='Excel IR MVP v1.0 unified CLI')
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -63,6 +94,25 @@ def main():
     p.add_argument('--all', action='store_true', dest='update_all')
     p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p.add_argument('--as-number', action='store_true')
+
+    p = sub.add_parser('header-edit')
+    p.add_argument('xlsx'); p.add_argument('out_xlsx')
+    p.add_argument('--headers', required=True, help='JSON array or slash-separated path, e.g. ["2026","5","8"] or 2026/5/8')
+    p.add_argument('--value', required=True)
+    p.add_argument('--sheet')
+    p.add_argument('--header-rows', default='1:3')
+    p.add_argument('--row', type=int)
+    p.add_argument('--row-match')
+    p.add_argument('--row-match-col', default='1')
+    p.add_argument('--data-start-row', type=int)
+    p.add_argument('--min-col', default='1')
+    p.add_argument('--max-col')
+    p.add_argument('--contains', action='store_true')
+    p.add_argument('--case-sensitive', action='store_true')
+    p.add_argument('--header-match-index', type=int, default=1)
+    p.add_argument('--preview', action='store_true')
+    p.add_argument('--as-number', action='store_true')
+    p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
 
     p = sub.add_parser('patch')
     p.add_argument('ir_json'); p.add_argument('patch_json'); p.add_argument('out_ir', nargs='?')
@@ -163,6 +213,33 @@ def main():
             offset_row=args.offset_row, offset_col=args.offset_col,
             preview=args.preview, update_all=args.update_all, engine=args.engine,
         )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if not result.get('found'):
+            raise SystemExit(1)
+    elif args.cmd == 'header-edit':
+        value = args.value
+        if args.as_number:
+            try:
+                value = float(value) if ('.' in value) else int(value)
+            except ValueError:
+                raise SystemExit('--as-number requires a numeric --value')
+        try:
+            header_start, header_end = _parse_row_range(args.header_rows)
+            headers = _parse_header_path(args.headers)
+            result = excel_ir_plus.update_cell_by_multi_header_xlsx(
+                args.xlsx, args.out_xlsx, headers, value,
+                sheet=args.sheet,
+                header_start_row=header_start, header_end_row=header_end,
+                row=args.row, row_match=args.row_match, row_match_col=args.row_match_col,
+                data_start_row=args.data_start_row,
+                min_col=_parse_col_arg(args.min_col) or 1,
+                max_col=_parse_col_arg(args.max_col),
+                contains=args.contains, case_sensitive=args.case_sensitive,
+                header_match_index=args.header_match_index,
+                preview=args.preview, engine=args.engine,
+            )
+        except ValueError as exc:
+            raise SystemExit(str(exc))
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if not result.get('found'):
             raise SystemExit(1)

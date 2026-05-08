@@ -11,6 +11,8 @@ excel-ir bench
 excel-ir engines
 excel-ir parse workbook.xlsx out.ir.json --engine openpyxl
 excel-ir parse workbook.xlsx out.ir.json --engine auto
+excel-ir header-edit workbook.xlsx edited.xlsx --headers 2026/5/8 --row-match 门店A --value 999 --as-number
+excel-ir header-edit workbook.xlsx ignored.xlsx --headers '["2026","5","8"]' --row-match 门店A --value 999 --preview
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 总计 --value 合计
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 备注 --value 说明 --start right
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 云业务 --value 云事业部 --all

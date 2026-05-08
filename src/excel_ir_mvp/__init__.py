@@ -13,6 +13,7 @@ try:
         compare_ir_files, strip_semantic_metadata_xlsx,
         metadata_status_xlsx, anonymize_workbook_xlsx,
         stream_find_cell_xlsx, stream_update_first_match_xlsx,
+        multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
     )
     from .ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
 except ImportError:  # dev fallback when imported from flat source tree
@@ -28,6 +29,7 @@ except ImportError:  # dev fallback when imported from flat source tree
         compare_ir_files, strip_semantic_metadata_xlsx,
         metadata_status_xlsx, anonymize_workbook_xlsx,
         stream_find_cell_xlsx, stream_update_first_match_xlsx,
+        multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
     )
     from ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
 
@@ -43,7 +45,8 @@ __all__ = [
     "compare_ir_files", "strip_semantic_metadata_xlsx",
     "metadata_status_xlsx", "anonymize_workbook_xlsx",
     "stream_find_cell_xlsx", "stream_update_first_match_xlsx",
+    "multi_header_columns_xlsx", "locate_cell_by_multi_header_xlsx", "update_cell_by_multi_header_xlsx",
     "apply_patch", "apply_patch_with_log", "dry_run", "validate_patch",
 ]
 
-__version__ = "2.0.0a13"
+__version__ = "2.0.0a14"

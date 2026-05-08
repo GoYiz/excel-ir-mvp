@@ -7,7 +7,7 @@ Python prototype for parsing complex human-authored Excel reports into an abstra
 
 Repository: https://github.com/GoYiz/excel-ir-mvp
 
-Current prerelease: **2.0.0a13**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
+Current prerelease: **2.0.0a14**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
 
 ## Install
 
@@ -23,6 +23,7 @@ python3 -m pip install -e .
 excel-ir doctor
 excel-ir engines
 excel-ir parse tests/fixtures/complex_report.xlsx out.ir.json --engine openpyxl
+excel-ir header-edit tests/fixtures/multi_header_dates.xlsx edited.xlsx --headers 2026/5/8 --row-match 门店A --value 999 --as-number
 excel-ir stream-edit tests/fixtures/complex_report.xlsx edited.xlsx --match 总计 --value 合计
 excel-ir stream-edit tests/fixtures/complex_report.xlsx edited.xlsx --match 云业务 --value 云事业部 --all
 excel-ir stream-edit tests/fixtures/complex_report.xlsx ignored.xlsx --match 业务线 --value 收入本月 --offset-row 1 --offset-col 2 --preview
@@ -45,6 +46,7 @@ excel-ir compare-ir --structural-only a.ir.json b.ir.json structural_diff.json
 ## Docs
 
 - [Backend Engines](docs/backends.md)
+- [Multi-level Header Edits](docs/multi-header-edits.md)
 - [Streaming Edits](docs/streaming-edits.md)
 - [Native vs Semantic Tables](docs/native-vs-semantic-tables.md)
 - [Metadata Commands](docs/metadata.md)

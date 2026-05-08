@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a13')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a14')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
         self.assertIn('openpyxl', excel_ir_mvp.available_engines())
 
@@ -394,6 +394,47 @@ class ExcelIRMVPTests(unittest.TestCase):
             p = subprocess.run(['python3', 'excel_ir_cli.py', 'parse', str(fixture_path('complex_report.xlsx')), str(ROOT / 'alpha13_wolfxl.ir.json'), '--engine', 'wolfxl'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.assertNotEqual(p.returncode, 0)
             self.assertIn('wolfxl', p.stderr + p.stdout)
+
+    def test_alpha14_multi_header_locate_and_edit(self):
+        from openpyxl import Workbook, load_workbook
+        from excel_ir_mvp import multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx
+        path = ROOT / 'tests' / 'fixtures' / 'multi_header_dates.xlsx'
+        wb = Workbook()
+        ws = wb.active
+        ws.title = '日期表'
+        ws['A1'] = '项目'
+        ws.merge_cells('B1:D1'); ws['B1'] = 2026
+        ws.merge_cells('E1:G1'); ws['E1'] = 2027
+        ws.merge_cells('B2:D2'); ws['B2'] = 5
+        ws.merge_cells('E2:G2'); ws['E2'] = 5
+        for idx, day in enumerate([7, 8, 9, 7, 8, 9], start=2):
+            ws.cell(3, idx).value = day
+        ws['A4'] = '门店A'; ws['B4'] = 10; ws['C4'] = 20; ws['D4'] = 30; ws['E4'] = 40; ws['F4'] = 50; ws['G4'] = 60
+        ws['A5'] = '门店B'; ws['B5'] = 11; ws['C5'] = 21; ws['D5'] = 31; ws['E5'] = 41; ws['F5'] = 51; ws['G5'] = 61
+        wb.save(path)
+        cols = multi_header_columns_xlsx(str(path), sheet='日期表', header_start_row=1, header_end_row=3, min_col=2)['columns']
+        c_col = [c for c in cols if c['letter'] == 'C'][0]
+        self.assertEqual(c_col['path'], ['2026', '5', '8'])
+        located = locate_cell_by_multi_header_xlsx(str(path), ['2026', '5', '8'], sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A')
+        self.assertTrue(located['found'])
+        self.assertEqual(located['target']['coord'], 'C4')
+        preview = update_cell_by_multi_header_xlsx(str(path), str(ROOT / 'multi_header_preview.xlsx'), ['2026', '5', '8'], 999, sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A', preview=True)
+        self.assertTrue(preview['preview'])
+        self.assertFalse(preview['updated'])
+        self.assertEqual(preview['target_coord'], 'C4')
+        out = ROOT / 'multi_header_edit.xlsx'
+        result = update_cell_by_multi_header_xlsx(str(path), str(out), ['2026', '5', '8'], 999, sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A')
+        self.assertTrue(result['updated'])
+        self.assertEqual(load_workbook(out)['日期表']['C4'].value, 999)
+        self.assertEqual(load_workbook(out)['日期表']['F4'].value, 50)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(path), str(ROOT / 'multi_header_cli_preview.xlsx'), '--sheet', '日期表', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '888', '--as-number', '--preview'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        cli_data = json.loads(p.stdout)
+        self.assertTrue(cli_data['preview'])
+        self.assertEqual(cli_data['target_coord'], 'C4')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(path), str(ROOT / 'multi_header_cli_edit.xlsx'), '--sheet', '日期表', '--headers', '["2026","5","8"]', '--row-match', '门店A', '--value', '777', '--as-number'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(load_workbook(ROOT / 'multi_header_cli_edit.xlsx')['日期表']['C4'].value, 777)
 
 
 if __name__ == '__main__':
