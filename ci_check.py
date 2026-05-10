@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 SOURCE_COMMANDS = [
-    ['python3', '-m', 'py_compile', 'excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_plus.py', 'src/excel_ir_mvp/ir_patch.py', 'src/excel_ir_mvp/formula_utils.py', 'src/excel_ir_mvp/validate_ir.py', 'src/excel_ir_mvp/models.py', 'src/excel_ir_mvp/backends.py', 'src/excel_ir_mvp/__main__.py'],
+    ['python3', '-m', 'py_compile', 'excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_cli.py', 'src/excel_ir_mvp/excel_ir_plus.py', 'src/excel_ir_mvp/ir_patch.py', 'src/excel_ir_mvp/formula_utils.py', 'src/excel_ir_mvp/validate_ir.py', 'src/excel_ir_mvp/models.py', 'src/excel_ir_mvp/backends.py', 'src/excel_ir_mvp/api.py', 'src/excel_ir_mvp/types.py', 'src/excel_ir_mvp/__main__.py'],
     ['python3', '-m', 'unittest', '-v', 'tests.test_excel_ir_mvp', 'tests.test_patch_ops', 'tests.test_native_tables', 'tests.test_metadata'],
     ['python3', '-m', 'coverage', 'erase'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest',
@@ -36,7 +36,8 @@ SOURCE_COMMANDS = [
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha12_stream_edit_preview_all_and_offsets',
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha13_backend_registry_and_engine_cli',
      'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha14_multi_header_locate_and_edit',
-     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha15_selective_sheets_and_compact_ir'],
+     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha15_selective_sheets_and_compact_ir',
+     'tests.test_excel_ir_mvp.ExcelIRMVPTests.test_alpha16_public_api_facade'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_patch_ops'],
     ['python3', '-m', 'coverage', 'run', '--parallel-mode', '--source=src/excel_ir_mvp', '-m', 'unittest', 'tests.test_native_tables', 'tests.test_metadata'],
     ['python3', '-m', 'coverage', 'combine'],

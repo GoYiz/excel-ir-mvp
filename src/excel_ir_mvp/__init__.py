@@ -1,52 +1,82 @@
 from __future__ import annotations
 
+from .api import (
+    WorkbookIR,
+    PatchIR,
+    anonymize,
+    apply_patch,
+    compare_ir,
+    diff,
+    engines,
+    header_columns,
+    header_edit,
+    inspect,
+    parse,
+    parse_with_options,
+    rebuild,
+    rebuild_with_options,
+    stream_edit,
+)
+from .backends import BackendUnavailableError, available_engines, engine_status, resolve_engine
+from .types import HeaderEditOptions, ParseOptions, RebuildOptions, StreamEditOptions
+
+# Backward-compatible advanced API aliases. Prefer excel_ir_mvp.api for new code.
 try:
     from .excel_ir_plus import (
-        parse_workbook_plus, rebuild_workbook_plus, diff_workbooks_plus,
-        available_engines, engine_status, resolve_engine, BackendUnavailableError,
-        collect_semantic_metadata, apply_semantic_metadata,
-        export_semantic_metadata_from_ir, import_semantic_metadata_to_ir,
-        semantic_metadata_diff, verify_metadata_checksum,
-        verify_semantic_metadata, verify_semantic_metadata_file,
-        extract_semantic_metadata_from_xlsx, verify_semantic_metadata_xlsx,
-        repair_semantic_metadata_xlsx, inspect_workbook,
-        compare_ir_files, strip_semantic_metadata_xlsx,
-        metadata_status_xlsx, anonymize_workbook_xlsx,
-        stream_find_cell_xlsx, stream_update_first_match_xlsx,
-        multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
+        parse_workbook_plus,
+        rebuild_workbook_plus,
+        diff_workbooks_plus,
+        inspect_workbook,
+        compare_ir_files,
+        metadata_status_xlsx,
+        anonymize_workbook_xlsx,
+        stream_find_cell_xlsx,
+        stream_update_first_match_xlsx,
+        multi_header_columns_xlsx,
+        locate_cell_by_multi_header_xlsx,
+        update_cell_by_multi_header_xlsx,
     )
-    from .ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
-except ImportError:  # dev fallback when imported from flat source tree
-    from excel_ir_plus import (
-        parse_workbook_plus, rebuild_workbook_plus, diff_workbooks_plus,
-        available_engines, engine_status, resolve_engine, BackendUnavailableError,
-        collect_semantic_metadata, apply_semantic_metadata,
-        export_semantic_metadata_from_ir, import_semantic_metadata_to_ir,
-        semantic_metadata_diff, verify_metadata_checksum,
-        verify_semantic_metadata, verify_semantic_metadata_file,
-        extract_semantic_metadata_from_xlsx, verify_semantic_metadata_xlsx,
-        repair_semantic_metadata_xlsx, inspect_workbook,
-        compare_ir_files, strip_semantic_metadata_xlsx,
-        metadata_status_xlsx, anonymize_workbook_xlsx,
-        stream_find_cell_xlsx, stream_update_first_match_xlsx,
-        multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
-    )
-    from ir_patch import apply_patch, apply_patch_with_log, dry_run, validate_patch
+except ImportError:  # pragma: no cover - flat source fallback
+    pass
+
+__version__ = "2.0.0a16"
 
 __all__ = [
-    "parse_workbook_plus", "rebuild_workbook_plus", "diff_workbooks_plus",
-    "available_engines", "engine_status", "resolve_engine", "BackendUnavailableError",
-    "collect_semantic_metadata", "apply_semantic_metadata",
-    "export_semantic_metadata_from_ir", "import_semantic_metadata_to_ir",
-    "semantic_metadata_diff", "verify_metadata_checksum",
-    "verify_semantic_metadata", "verify_semantic_metadata_file",
-    "extract_semantic_metadata_from_xlsx", "verify_semantic_metadata_xlsx",
-    "repair_semantic_metadata_xlsx", "inspect_workbook",
-    "compare_ir_files", "strip_semantic_metadata_xlsx",
-    "metadata_status_xlsx", "anonymize_workbook_xlsx",
-    "stream_find_cell_xlsx", "stream_update_first_match_xlsx",
-    "multi_header_columns_xlsx", "locate_cell_by_multi_header_xlsx", "update_cell_by_multi_header_xlsx",
-    "apply_patch", "apply_patch_with_log", "dry_run", "validate_patch",
+    # Stable, concise public API
+    "WorkbookIR",
+    "PatchIR",
+    "parse",
+    "parse_with_options",
+    "rebuild",
+    "rebuild_with_options",
+    "diff",
+    "compare_ir",
+    "inspect",
+    "apply_patch",
+    "stream_edit",
+    "header_edit",
+    "header_columns",
+    "anonymize",
+    "engines",
+    "ParseOptions",
+    "RebuildOptions",
+    "StreamEditOptions",
+    "HeaderEditOptions",
+    "available_engines",
+    "engine_status",
+    "resolve_engine",
+    "BackendUnavailableError",
+    # Compatibility aliases retained for existing users
+    "parse_workbook_plus",
+    "rebuild_workbook_plus",
+    "diff_workbooks_plus",
+    "inspect_workbook",
+    "compare_ir_files",
+    "metadata_status_xlsx",
+    "anonymize_workbook_xlsx",
+    "stream_find_cell_xlsx",
+    "stream_update_first_match_xlsx",
+    "multi_header_columns_xlsx",
+    "locate_cell_by_multi_header_xlsx",
+    "update_cell_by_multi_header_xlsx",
 ]
-
-__version__ = "2.0.0a15"

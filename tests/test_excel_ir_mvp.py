@@ -28,9 +28,14 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a15')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a16')
         self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
         self.assertIn('openpyxl', excel_ir_mvp.available_engines())
+        self.assertTrue(callable(excel_ir_mvp.parse))
+        public = set(excel_ir_mvp.__all__)
+        self.assertIn('parse', public)
+        self.assertIn('rebuild', public)
+        self.assertIn('header_edit', public)
 
     def test_module_cli_smoke(self):
         self.run_cmd(['python3', '-m', 'excel_ir_mvp.excel_ir_cli', 'doctor'], env=self.module_env())
@@ -472,6 +477,24 @@ class ExcelIRMVPTests(unittest.TestCase):
         p = subprocess.run(['python3', 'excel_ir_cli.py', 'rebuild', str(ROOT / 'alpha15_cli_selected.ir.json'), str(ROOT / 'alpha15_cli_selected.xlsx'), '--sheet', 'Keep'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         self.assertEqual(load_workbook(ROOT / 'alpha15_cli_selected.xlsx').sheetnames, ['Keep'])
+    def test_alpha16_public_api_facade(self):
+        from openpyxl import load_workbook
+        import excel_ir_mvp as xir
+        src = fixture_path('complex_report.xlsx')
+        ir = xir.parse(src, sheets='经营驾驶舱')
+        self.assertEqual([s['name'] for s in ir['workbook']['sheets']], ['经营驾驶舱'])
+        out = ROOT / 'alpha16_api_rebuilt.xlsx'
+        xir.rebuild(ir, out, sheets='经营驾驶舱')
+        self.assertEqual([s for s in load_workbook(out).sheetnames if not s.startswith('_excel_ir_metadata')], ['经营驾驶舱'])
+        overview = xir.inspect(src)
+        self.assertTrue(overview['ok'])
+        self.assertIn('openpyxl', xir.engines()['available'])
+        preview = xir.stream_edit(src, ROOT / 'alpha16_stream_preview.xlsx', match='业务线', value='收入本月', options=xir.StreamEditOptions(offset_row=1, offset_col=2, preview=True))
+        self.assertFalse(preview['updated'])
+        self.assertEqual(preview['target_coord'], 'C6')
+        header_preview = xir.header_edit(fixture_path('multi_header_dates.xlsx'), ROOT / 'alpha16_header_preview.xlsx', headers=['2026', '5', '8'], value=123, options=xir.HeaderEditOptions(row_match='门店A', preview=True))
+        self.assertTrue(header_preview['found'])
+        self.assertEqual(header_preview['target_coord'], 'C4')
 
 
 if __name__ == '__main__':

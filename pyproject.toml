@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "excel-ir-mvp"
-version = "2.0.0a15"
+version = "2.0.0a16"
 description = "MVP for parsing complex Excel reports into IR, semantic patching, and rebuilding XLSX"
 readme = "README.md"
 requires-python = ">=3.10"
