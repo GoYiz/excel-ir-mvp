@@ -54,7 +54,7 @@ The stable facade is intentionally small:
 - `anonymize`, `engines`
 - option dataclasses: `ParseOptions`, `RebuildOptions`, `StreamEditOptions`, `HeaderEditOptions`
 
-Historical helpers such as `parse_workbook_plus`, `rebuild_workbook_plus`, `stream_update_first_match_xlsx`, and metadata-specific helpers remain available for compatibility and advanced workflows, but they are not the primary learning path.
+Old top-level helper aliases were removed in v2.0.0a17. Use submodules only for internal development.
 
 ## Two-layer IR
 

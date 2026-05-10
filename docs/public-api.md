@@ -1,8 +1,6 @@
 # Public API
 
-v2.0.0a16 introduces a small facade for third-party package users. New code should prefer this layer instead of importing the historical engine modules directly.
-
-## Recommended imports
+The package intentionally exposes a small top-level API. New code should import the package facade, not historical engine modules.
 
 ```python
 import excel_ir_mvp as xir
@@ -12,11 +10,11 @@ xir.rebuild(ir, "rebuilt.xlsx")
 summary = xir.inspect("report.xlsx")
 ```
 
-## Stable facade functions
+## Stable top-level functions
 
 | Function | Purpose |
 | --- | --- |
-| `parse(path, sheets=None, engine="openpyxl")` | XLSX -> IR. |
+| `parse(path, sheets=None, engine="openpyxl", profile="full")` | XLSX -> IR. |
 | `rebuild(ir, path, sheets=None, engine="openpyxl")` | IR -> XLSX. |
 | `diff(a, b, engine="openpyxl")` | Canonical XLSX diff. |
 | `compare_ir(a, b, mode="full")` | Compare IR objects. |
@@ -28,19 +26,25 @@ summary = xir.inspect("report.xlsx")
 | `anonymize(src, dst)` | Produce shareable redacted workbook. |
 | `engines()` | Engine status. |
 
+## Fast parse profile
+
+For large workbooks with many cells/styles/images, start with:
+
+```python
+ir = xir.parse("large.xlsx", sheets="Data", profile="fast")
+```
+
+`profile="fast"` skips expensive extras: formula cache workbook loading, empty styled cells, logical inference, extended OOXML extras, charts, images, binary payloads and hidden semantic metadata. Use `profile="full"` when you need maximum round-trip fidelity.
+
 ## Options objects
 
 ```python
-from excel_ir_mvp import ParseOptions, StreamEditOptions, HeaderEditOptions
-
-ir = xir.parse_with_options("report.xlsx", ParseOptions(sheets=["Sheet1", "Sheet2"]))
-
 preview = xir.stream_edit(
     "report.xlsx",
     "ignored.xlsx",
     match="业务线",
     value="收入本月",
-    options=StreamEditOptions(offset_row=1, offset_col=2, preview=True),
+    options=xir.StreamEditOptions(offset_row=1, offset_col=2, preview=True),
 )
 
 result = xir.header_edit(
@@ -48,19 +52,10 @@ result = xir.header_edit(
     "edited.xlsx",
     headers=["2026", "5", "8"],
     value=999,
-    options=HeaderEditOptions(row_match="门店A"),
+    options=xir.HeaderEditOptions(row_match="门店A"),
 )
 ```
 
-## Compatibility
+## Removed old top-level API
 
-The earlier functions such as `parse_workbook_plus`, `rebuild_workbook_plus`, `stream_update_first_match_xlsx`, and metadata helpers remain importable for compatibility and advanced use. They are no longer the recommended first thing to learn.
-
-Internal modules follow this rough convention:
-
-- `api.py`: concise package facade.
-- `types.py`: option dataclasses and aliases.
-- `excel_ir.py`: core fidelity IR engine.
-- `excel_ir_plus.py`: extended OOXML objects and metadata.
-- `ir_patch.py`: semantic patch engine.
-- `excel_ir_cli.py`: CLI adapter.
+As of v2.0.0a17, old names such as `parse_workbook_plus`, `rebuild_workbook_plus`, `stream_update_first_match_xlsx`, and metadata-specific helpers are no longer exported from `excel_ir_mvp.__init__`. Internal modules may still use implementation functions, but third-party users should use the facade above.

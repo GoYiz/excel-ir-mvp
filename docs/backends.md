@@ -26,12 +26,12 @@ excel-ir stream-edit workbook.xlsx edited.xlsx --match 总计 --value 合计 --e
 API:
 
 ```python
-from excel_ir_mvp import parse_workbook_plus, rebuild_workbook_plus, available_engines, engine_status
+from excel_ir_mvp import parse, rebuild, available_engines, engine_status
 
 print(available_engines())
 print(engine_status())
-ir = parse_workbook_plus("workbook.xlsx", engine="auto")
-rebuild_workbook_plus(ir, "rebuilt.xlsx", engine="openpyxl")
+ir = parse("workbook.xlsx", engine="auto")
+rebuild(ir, "rebuilt.xlsx", engine="openpyxl")
 ```
 
 Notes:

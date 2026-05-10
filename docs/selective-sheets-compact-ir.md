@@ -25,10 +25,10 @@ excel-ir rebuild full.ir.json selected.xlsx --sheet Sheet1 --sheet Sheet2
 ## API
 
 ```python
-from excel_ir_mvp import parse_workbook_plus, rebuild_workbook_plus
+from excel_ir_mvp import parse, rebuild
 
-ir = parse_workbook_plus("workbook.xlsx", sheet_names=["经营驾驶舱"])
-rebuild_workbook_plus(ir, "selected.xlsx", sheet_names=["经营驾驶舱"])
+ir = parse("workbook.xlsx", sheets=["经营驾驶舱"])
+rebuild(ir, "selected.xlsx", sheets=["经营驾驶舱"])
 ```
 
 The resulting IR records:

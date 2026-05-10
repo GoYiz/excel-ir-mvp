@@ -10,6 +10,9 @@ excel-ir bench
 ```bash
 excel-ir engines
 excel-ir parse workbook.xlsx out.ir.json --engine openpyxl
+excel-ir parse large.xlsx fast.ir.json --sheet Data --fast
+excel-ir parse large.xlsx fast.ir.json --sheet Data --read-only --no-extra --no-formula-cache
+excel-ir parse large.xlsx lean.ir.json --sheet Data --no-formula-cache --no-extra --no-binary
 excel-ir parse workbook.xlsx selected.ir.json --sheet Sheet1 --sheet Sheet2
 excel-ir rebuild selected.ir.json selected.xlsx --sheet Sheet1
 excel-ir parse workbook.xlsx out.ir.json --engine auto

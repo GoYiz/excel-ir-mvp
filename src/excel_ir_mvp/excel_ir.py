@@ -543,11 +543,12 @@ def update_cell_by_multi_header_xlsx(src_path: str, out_path: str, headers: List
     return result
 
 
-def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None) -> Dict[str, Any]:
-    wb = _load_workbook(path, engine=engine, data_only=False)
-    data_wb = _load_workbook(path, engine=engine, data_only=True)
+def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None, include_formula_cache: bool = True, sparse: bool = True, read_only: bool = False) -> Dict[str, Any]:
+    wb = _load_workbook(path, engine=engine, data_only=False, read_only=read_only)
+    data_wb = _load_workbook(path, engine=engine, data_only=True, read_only=read_only) if include_formula_cache else None
     styles: Dict[str, Dict[str, Any]] = {}
     style_ids: Dict[str, str] = {}
+    style_obj_ids: Dict[int, str] = {}
     sheets: List[Dict[str, Any]] = []
 
     requested_sheets = _sheet_filter(sheet_names)
@@ -555,46 +556,56 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
     for ws in wb.worksheets:
         if requested_sheets is not None and ws.title not in requested_sheets:
             continue
-        data_ws = data_wb[ws.title] if ws.title in data_wb.sheetnames else None
+        data_ws = data_wb[ws.title] if data_wb is not None and ws.title in data_wb.sheetnames else None
         cells: Dict[str, Dict[str, Any]] = {}
-        for row in ws.iter_rows():
-            for cell in row:
-                if isinstance(cell, MergedCell):
-                    continue
-                if cell.value is None and not (include_empty_styled and cell.has_style):
-                    continue
+        cell_iter = ws._cells.values() if sparse and (not read_only) and hasattr(ws, "_cells") else (cell for row in ws.iter_rows() for cell in row)
+        for cell in cell_iter:
+            if isinstance(cell, MergedCell):
+                continue
+            if cell.value is None and not (include_empty_styled and cell.has_style):
+                continue
+            style_key_obj = getattr(cell, "style_id", None)
+            if style_key_obj is None:
+                style_key_obj = id(getattr(cell, "_style", None))
+            sid = style_obj_ids.get(int(style_key_obj)) if style_key_obj is not None else None
+            if sid is None:
                 sdict = style_to_dict(cell)
                 skey = stable_json_key(sdict)
-                if skey not in style_ids:
+                sid = style_ids.get(skey)
+                if sid is None:
                     sid = f"s{len(style_ids) + 1:04d}"
                     style_ids[skey] = sid
                     styles[sid] = sdict
-                entry = {
-                    "row": cell.row,
-                    "col": cell.column,
-                    "value": normalized_value(cell.value),
-                    "data_type": cell.data_type,
-                    "style_id": style_ids[skey],
-                }
-                if cell.data_type == "f" and data_ws is not None:
-                    entry["computed_value"] = normalized_value(data_ws[cell.coordinate].value)
-                if cell.hyperlink:
-                    entry["hyperlink"] = cell.hyperlink.target
-                if cell.comment:
-                    entry["comment"] = {"text": cell.comment.text, "author": cell.comment.author}
-                out_entry = _strip_none(entry)
-                if cell.data_type == "f" and "computed_value" not in out_entry:
-                    out_entry["computed_value"] = entry.get("computed_value")
-                cells[cell.coordinate] = out_entry
+                if style_key_obj is not None:
+                    style_obj_ids[int(style_key_obj)] = sid
+            entry = {
+                "row": cell.row,
+                "col": cell.column,
+                "value": normalized_value(cell.value),
+                "data_type": cell.data_type,
+                "style_id": sid,
+            }
+            if include_formula_cache and cell.data_type == "f" and data_ws is not None:
+                entry["computed_value"] = normalized_value(data_ws[cell.coordinate].value)
+            hyperlink = getattr(cell, "hyperlink", None)
+            if hyperlink:
+                entry["hyperlink"] = hyperlink.target
+            comment = getattr(cell, "comment", None)
+            if comment:
+                entry["comment"] = {"text": comment.text, "author": comment.author}
+            out_entry = _strip_none(entry)
+            if include_formula_cache and cell.data_type == "f" and "computed_value" not in out_entry:
+                out_entry["computed_value"] = entry.get("computed_value")
+            cells[cell.coordinate] = out_entry
 
         rows: Dict[str, Dict[str, Any]] = {}
-        for idx, dim in ws.row_dimensions.items():
+        for idx, dim in getattr(ws, "row_dimensions", {}).items():
             d = _strip_none(_omit_defaults({"height": dim.height, "hidden": dim.hidden, "outlineLevel": dim.outlineLevel}, {"hidden": False, "outlineLevel": 0}))
             if d:
                 rows[str(idx)] = d
 
         cols: Dict[str, Dict[str, Any]] = {}
-        for key, dim in ws.column_dimensions.items():
+        for key, dim in getattr(ws, "column_dimensions", {}).items():
             d = _strip_none(_omit_defaults({"width": dim.width, "hidden": dim.hidden, "outlineLevel": dim.outlineLevel}, {"hidden": False, "outlineLevel": 0}))
             if d:
                 cols[str(key)] = d
@@ -602,8 +613,8 @@ def parse_workbook(path: str, include_empty_styled: bool = True, infer_logic: bo
         sheet = {
             "name": ws.title,
             "dimensions": {"max_row": ws.max_row, "max_col": ws.max_column},
-            "freeze_panes": ws.freeze_panes,
-            "merged_ranges": [str(rng) for rng in ws.merged_cells.ranges],
+            "freeze_panes": getattr(ws, "freeze_panes", None),
+            "merged_ranges": [str(rng) for rng in getattr(getattr(ws, "merged_cells", None), "ranges", [])],
             "rows": rows,
             "cols": cols,
             "cells": cells,

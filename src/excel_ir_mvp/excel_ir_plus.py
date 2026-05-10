@@ -404,13 +404,15 @@ def marker_to_dict(m: Any) -> Dict[str, Any]:
     })
 
 
-def parse_images(ws) -> List[Dict[str, Any]]:
+def parse_images(ws, include_binary: bool = True) -> List[Dict[str, Any]]:
     result: List[Dict[str, Any]] = []
     for idx, img in enumerate(getattr(ws, "_images", []) or [], start=1):
-        try:
-            data = img._data()
-        except Exception:
-            data = b""
+        data = b""
+        if include_binary:
+            try:
+                data = img._data()
+            except Exception:
+                data = b""
         anchor = getattr(img, "anchor", None)
         anchor_data: Dict[str, Any] = {}
         if isinstance(anchor, str):
@@ -649,7 +651,7 @@ def apply_charts(ws, items: List[Dict[str, Any]]) -> None:
                 ws.add_chart(chart, "A1")
 
 
-def parse_sheet_extra(ws) -> Dict[str, Any]:
+def parse_sheet_extra(ws, *, include_images: bool = True, include_charts: bool = True, include_binary: bool = True) -> Dict[str, Any]:
     tab_color = excel_ir.color_to_dict(getattr(ws.sheet_properties, "tabColor", None))
     sheet_view = _omit_defaults_dict(_attrs_to_dict(ws.sheet_view, [
         "showFormulas", "showGridLines", "showRowColHeaders", "showZeros", "rightToLeft",
@@ -690,8 +692,8 @@ def parse_sheet_extra(ws) -> Dict[str, Any]:
         "data_validations": parse_data_validations(ws),
         "conditional_formatting": parse_conditional_formatting(ws),
         "tables": parse_tables(ws),
-        "images": parse_images(ws),
-        "charts": parse_charts(ws),
+        "images": parse_images(ws, include_binary=include_binary) if include_images else [],
+        "charts": parse_charts(ws) if include_charts else [],
     })
 
 
@@ -752,20 +754,36 @@ def _filter_ir_sheets(ir: Dict[str, Any], sheet_names: Optional[Iterable[str]]) 
     return out
 
 
-def parse_workbook_plus(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None) -> Dict[str, Any]:
-    ir = excel_ir.parse_workbook(path, include_empty_styled=include_empty_styled, infer_logic=infer_logic, engine=engine, sheet_names=sheet_names)
+def parse_workbook_plus(path: str, include_empty_styled: bool = True, infer_logic: bool = True, engine: str | None = None, sheet_names: Optional[Iterable[str]] = None, include_formula_cache: bool = True, include_extra: bool = True, include_images: bool = True, include_charts: bool = True, include_binary: bool = True, read_only: bool = False, sparse: bool = True, profile: str = "full") -> Dict[str, Any]:
+    if profile not in {"full", "fast"}:
+        raise ValueError("profile must be full or fast")
+    if profile == "fast":
+        include_empty_styled = False
+        infer_logic = False
+        include_formula_cache = False
+        include_extra = False
+        include_images = False
+        include_charts = False
+        include_binary = False
+        read_only = True
+        sparse = True
+    ir = excel_ir.parse_workbook(path, include_empty_styled=include_empty_styled, infer_logic=infer_logic, engine=engine, sheet_names=sheet_names, include_formula_cache=include_formula_cache, sparse=sparse, read_only=read_only)
     ir["schema_version"] = SCHEMA_VERSION
     ir.get("workbook", {})["sheets"] = [
         s for s in ir.get("workbook", {}).get("sheets", [])
         if s.get("name") != METADATA_SHEET_NAME
     ]
-    wb = _load_workbook(path, engine=engine, data_only=False)
+    wb = _load_workbook(path, engine=engine, data_only=False) if include_extra else None
     requested_sheets = _sheet_filter(sheet_names)
-    visible_worksheets = [ws for ws in wb.worksheets if ws.title != METADATA_SHEET_NAME and (requested_sheets is None or ws.title in requested_sheets)]
+    visible_worksheets = [ws for ws in wb.worksheets if ws.title != METADATA_SHEET_NAME and (requested_sheets is None or ws.title in requested_sheets)] if wb is not None else []
     for sheet_ir, ws in zip(ir["workbook"].get("sheets", []), visible_worksheets):
-        sheet_ir["extra"] = parse_sheet_extra(ws)
-    apply_semantic_metadata(ir, read_semantic_metadata_sheet(wb))
+        sheet_ir["extra"] = parse_sheet_extra(ws, include_images=include_images, include_charts=include_charts, include_binary=include_binary)
+    if wb is not None:
+        apply_semantic_metadata(ir, read_semantic_metadata_sheet(wb))
     ir.setdefault("workbook", {}).setdefault("engine", _engine_info(engine))
+    ir.setdefault("workbook", {})["parse_profile"] = profile
+    if profile == "fast":
+        ir.setdefault("workbook", {})["parse_warnings"] = ["fast profile skips formula cache, empty styled cells, logical inference, extended OOXML extras, images, charts and hidden semantic metadata; it uses read-only streaming mode where supported"]
     ir.setdefault("workbook", {})["sheet_names"] = [s.get("name") for s in ir.get("workbook", {}).get("sheets", [])]
     if requested_sheets is not None:
         ir.setdefault("workbook", {})["selected_sheets"] = [s for s in ir["workbook"]["sheet_names"]]
@@ -1338,6 +1356,8 @@ def main() -> None:
     p_parse.add_argument("--no-logic", action="store_true")
     p_parse.add_argument("--engine", default="openpyxl", choices=["openpyxl", "wolfxl", "auto"])
     p_parse.add_argument("--sheet", action="append", dest="sheets")
+    p_parse.add_argument("--profile", choices=["full", "fast"], default="full")
+    p_parse.add_argument("--fast", action="store_true")
 
     p_rebuild = sub.add_parser("rebuild")
     p_rebuild.add_argument("input_json")
@@ -1356,7 +1376,8 @@ def main() -> None:
 
     args = p.parse_args()
     if args.cmd == "parse":
-        ir = parse_workbook_plus(args.input, infer_logic=not args.no_logic, engine=args.engine, sheet_names=args.sheets)
+        profile = "fast" if args.fast else args.profile
+        ir = parse_workbook_plus(args.input, infer_logic=not args.no_logic, engine=args.engine, sheet_names=args.sheets, profile=profile)
         save_json(ir, args.output)
         print(json.dumps({"ok": True, "schema_version": SCHEMA_VERSION, "sheets": len(ir["workbook"]["sheets"]), "styles": len(ir["workbook"]["styles"]), "output": args.output}, ensure_ascii=False))
     elif args.cmd == "rebuild":

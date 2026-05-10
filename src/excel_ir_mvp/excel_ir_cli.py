@@ -56,6 +56,15 @@ def main():
     p.add_argument('xlsx'); p.add_argument('ir_json')
     p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p.add_argument('--sheet', action='append', dest='sheets', help='Sheet name to parse; repeat for multiple sheets')
+    p.add_argument('--profile', choices=['full', 'fast'], default='full')
+    p.add_argument('--fast', action='store_true', help='Shortcut for --profile fast')
+    p.add_argument('--no-formula-cache', action='store_true')
+    p.add_argument('--no-extra', action='store_true')
+    p.add_argument('--no-images', action='store_true')
+    p.add_argument('--no-charts', action='store_true')
+    p.add_argument('--no-binary', action='store_true')
+    p.add_argument('--read-only', action='store_true', help='Use openpyxl read-only streaming mode where possible')
+    p.add_argument('--dense', action='store_true', help='Use rectangular worksheet iteration instead of sparse cells')
 
     p = sub.add_parser('rebuild')
     p.add_argument('ir_json'); p.add_argument('xlsx')
@@ -176,7 +185,20 @@ def main():
 
     args = ap.parse_args()
     if args.cmd == 'parse':
-        excel_ir_plus.save_json(excel_ir_plus.parse_workbook_plus(args.xlsx, engine=args.engine, sheet_names=args.sheets), args.ir_json)
+        profile = 'fast' if args.fast else args.profile
+        excel_ir_plus.save_json(excel_ir_plus.parse_workbook_plus(
+            args.xlsx,
+            engine=args.engine,
+            sheet_names=args.sheets,
+            include_formula_cache=not args.no_formula_cache,
+            include_extra=not args.no_extra,
+            include_images=not args.no_images,
+            include_charts=not args.no_charts,
+            include_binary=not args.no_binary,
+            read_only=args.read_only,
+            sparse=not args.dense,
+            profile=profile,
+        ), args.ir_json)
         print(json.dumps({'ok': True, 'output': args.ir_json}, ensure_ascii=False))
     elif args.cmd == 'rebuild':
         excel_ir_plus.rebuild_workbook_plus(excel_ir_plus.load_json(args.ir_json), args.xlsx, engine=args.engine, sheet_names=args.sheets)

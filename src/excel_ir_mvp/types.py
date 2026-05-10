@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, Union
+from typing import Literal, Optional, Sequence, Union
 
 SheetSelector = Optional[Union[str, Sequence[str]]]
+ParseProfile = Literal["full", "fast"]
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,14 @@ class ParseOptions:
     sheets: SheetSelector = None
     include_empty_styled: bool = True
     infer_logic: bool = True
+    include_formula_cache: bool = True
+    include_extra: bool = True
+    include_images: bool = True
+    include_charts: bool = True
+    include_binary: bool = True
+    read_only: bool = False
+    sparse: bool = True
+    profile: ParseProfile = "full"
 
 
 @dataclass(frozen=True)

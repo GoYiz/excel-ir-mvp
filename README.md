@@ -7,7 +7,7 @@ Python package for parsing complex human-authored Excel reports into an abstract
 
 Repository: https://github.com/GoYiz/excel-ir-mvp
 
-Current prerelease: **2.0.0a16**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
+Current prerelease: **2.0.0a17**. PyPI publishing is intentionally skipped for now; use GitHub releases or install from source.
 
 ## Install
 
@@ -54,6 +54,7 @@ xir.stream_edit(
 excel-ir doctor
 excel-ir engines
 excel-ir parse tests/fixtures/complex_report.xlsx out.ir.json --sheet 经营驾驶舱
+excel-ir parse large.xlsx fast.ir.json --sheet Data --fast
 excel-ir rebuild out.ir.json rebuilt.xlsx --sheet 经营驾驶舱
 excel-ir diff tests/fixtures/complex_report.xlsx rebuilt.xlsx diff.json
 excel-ir header-edit tests/fixtures/multi_header_dates.xlsx edited.xlsx --headers 2026/5/8 --row-match 门店A --value 999 --as-number
@@ -70,6 +71,7 @@ excel-ir stream-edit tests/fixtures/complex_report.xlsx edited.xlsx --match 总�
 ## Docs
 
 - [Public API](docs/public-api.md)
+- [Performance Guide](docs/performance.md)
 - [Project Structure](docs/project-structure.md)
 - [Backend Engines](docs/backends.md)
 - [Selective Sheets and Compact IR](docs/selective-sheets-compact-ir.md)

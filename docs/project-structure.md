@@ -22,7 +22,7 @@ excel_ir_mvp/
 ## Design principles
 
 1. **Small public surface**: `import excel_ir_mvp as xir` should be enough for common parse/rebuild/diff/edit workflows.
-2. **Compatibility over churn**: older `*_xlsx` and `*_plus` helpers remain available, but are treated as advanced/compatibility APIs.
+2. **No legacy top-level aliases**: old `*_xlsx` and `*_plus` implementation helpers are not exported from `excel_ir_mvp`; use the facade.
 3. **Two-layer IR**: fidelity IR preserves workbook structure; semantic IR stores table intent, metadata and patch history.
 4. **Action-oriented edits**: high-level changes are represented as patch actions or targeted edit calls, not raw JSON mutation.
 5. **Backend abstraction**: `openpyxl` remains default; optional engines can be registered/probed without changing the public facade.

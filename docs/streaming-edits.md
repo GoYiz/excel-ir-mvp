@@ -42,9 +42,11 @@ Options:
 API:
 
 ```python
-stream_find_cell_xlsx(path, match, start="left", offset_row=0, offset_col=0)
-stream_update_first_match_xlsx(path, out, match, new_value, start="right", preview=True)
-stream_update_first_match_xlsx(path, out, match, new_value, update_all=True)
+import excel_ir_mvp as xir
+
+xir.stream_edit(path, out, match="总计", value="合计")
+xir.stream_edit(path, out, match="业务线", value="收入本月", options=xir.StreamEditOptions(offset_row=1, offset_col=2, preview=True))
+xir.stream_edit(path, out, match="云业务", value="云事业部", options=xir.StreamEditOptions(update_all=True))
 ```
 
 The result includes `visited_cells`, `stopped_reason`, and a `changes` list. For offset edits each change records both `anchor` and `target`, making audit trails explicit.

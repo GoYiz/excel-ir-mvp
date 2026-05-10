@@ -20,17 +20,17 @@ def _coerce_sheets(sheets: SheetSelector) -> Optional[list[str]]:
     return [str(s) for s in sheets if str(s)]
 
 
-def parse(path: str | Path, *, sheets: SheetSelector = None, engine: str = "openpyxl", include_empty_styled: bool = True, infer_logic: bool = True) -> WorkbookIR:
+def parse(path: str | Path, *, sheets: SheetSelector = None, engine: str = "openpyxl", include_empty_styled: bool = True, infer_logic: bool = True, include_formula_cache: bool = True, include_extra: bool = True, include_images: bool = True, include_charts: bool = True, include_binary: bool = True, read_only: bool = False, sparse: bool = True, profile: str = "full") -> WorkbookIR:
     """Parse an XLSX file into Excel IR.
 
     This is the recommended public entry point. Use ``sheets`` to limit large
     workbooks to one or more sheets.
     """
-    return _xp.parse_workbook_plus(str(path), include_empty_styled=include_empty_styled, infer_logic=infer_logic, engine=engine, sheet_names=_coerce_sheets(sheets))
+    return _xp.parse_workbook_plus(str(path), include_empty_styled=include_empty_styled, infer_logic=infer_logic, engine=engine, sheet_names=_coerce_sheets(sheets), include_formula_cache=include_formula_cache, include_extra=include_extra, include_images=include_images, include_charts=include_charts, include_binary=include_binary, read_only=read_only, sparse=sparse, profile=profile)
 
 
 def parse_with_options(path: str | Path, options: ParseOptions) -> WorkbookIR:
-    return parse(path, sheets=options.sheets, engine=options.engine, include_empty_styled=options.include_empty_styled, infer_logic=options.infer_logic)
+    return parse(path, sheets=options.sheets, engine=options.engine, include_empty_styled=options.include_empty_styled, infer_logic=options.infer_logic, include_formula_cache=options.include_formula_cache, include_extra=options.include_extra, include_images=options.include_images, include_charts=options.include_charts, include_binary=options.include_binary, read_only=options.read_only, sparse=options.sparse, profile=options.profile)
 
 
 def rebuild(ir: WorkbookIR, path: str | Path, *, sheets: SheetSelector = None, engine: str = "openpyxl") -> None:

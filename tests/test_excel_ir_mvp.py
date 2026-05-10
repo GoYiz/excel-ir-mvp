@@ -28,14 +28,16 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a16')
-        self.assertTrue(callable(excel_ir_mvp.parse_workbook_plus))
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a17')
+        self.assertTrue(callable(excel_ir_mvp.parse))
         self.assertIn('openpyxl', excel_ir_mvp.available_engines())
         self.assertTrue(callable(excel_ir_mvp.parse))
         public = set(excel_ir_mvp.__all__)
         self.assertIn('parse', public)
         self.assertIn('rebuild', public)
         self.assertIn('header_edit', public)
+        self.assertFalse(hasattr(excel_ir_mvp, 'parse_workbook_plus'))
+        self.assertFalse(hasattr(excel_ir_mvp, 'stream_update_first_match_xlsx'))
 
     def test_module_cli_smoke(self):
         self.run_cmd(['python3', '-m', 'excel_ir_mvp.excel_ir_cli', 'doctor'], env=self.module_env())
@@ -402,7 +404,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_alpha14_multi_header_locate_and_edit(self):
         from openpyxl import Workbook, load_workbook
-        from excel_ir_mvp import multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx
+        from excel_ir_mvp.excel_ir import multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx
         path = ROOT / 'tests' / 'fixtures' / 'multi_header_dates.xlsx'
         wb = Workbook()
         ws = wb.active
@@ -495,6 +497,23 @@ class ExcelIRMVPTests(unittest.TestCase):
         header_preview = xir.header_edit(fixture_path('multi_header_dates.xlsx'), ROOT / 'alpha16_header_preview.xlsx', headers=['2026', '5', '8'], value=123, options=xir.HeaderEditOptions(row_match='门店A', preview=True))
         self.assertTrue(header_preview['found'])
         self.assertEqual(header_preview['target_coord'], 'C4')
+    def test_alpha17_fast_parse_profile_and_no_legacy_top_level_api(self):
+        import excel_ir_mvp as xir
+        from excel_ir_mvp import api
+        src = fixture_path('complex_report.xlsx')
+        full = xir.parse(src)
+        fast = xir.parse(src, profile='fast')
+        self.assertEqual(fast['workbook']['parse_profile'], 'fast')
+        self.assertIn('parse_warnings', fast['workbook'])
+        self.assertLess(len(json.dumps(fast, ensure_ascii=False)), len(json.dumps(full, ensure_ascii=False)))
+        self.assertTrue(all('extra' not in s for s in fast['workbook']['sheets']))
+        self.assertTrue(all('logical' not in s or not s.get('logical', {}).get('regions') for s in fast['workbook']['sheets']))
+        self.assertFalse(hasattr(xir, 'parse_workbook_plus'))
+        self.assertTrue(callable(api.parse))
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'parse', str(src), str(ROOT / 'alpha17_fast.ir.json'), '--fast'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        cli_ir = json.loads((ROOT / 'alpha17_fast.ir.json').read_text(encoding='utf-8'))
+        self.assertEqual(cli_ir['workbook']['parse_profile'], 'fast')
 
 
 if __name__ == '__main__':
