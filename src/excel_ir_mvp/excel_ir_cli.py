@@ -27,15 +27,25 @@ def _parse_header_path(text):
     return [x for x in str(text).split('/') if x != '']
 
 
-def _parse_row_range(text):
+def _parse_axis_range(text, *, numeric=True):
     parts = str(text).split(':', 1)
     if len(parts) == 1:
-        start = end = int(parts[0])
+        start = end = parts[0]
     else:
-        start, end = int(parts[0]), int(parts[1])
-    if start < 1 or end < start:
-        raise ValueError('header rows must be START:END')
+        start, end = parts[0], parts[1]
+    if numeric:
+        start, end = int(start), int(end)
+        if start < 1 or end < start:
+            raise ValueError('range must be START:END')
+    else:
+        start, end = _parse_col_arg(start), _parse_col_arg(end)
+        if start < 1 or end < start:
+            raise ValueError('column range must be START:END')
     return start, end
+
+
+def _parse_row_range(text):
+    return _parse_axis_range(text, numeric=True)
 
 
 def _parse_col_arg(value):
@@ -112,13 +122,22 @@ def main():
     p.add_argument('--value', required=True)
     p.add_argument('--sheet')
     p.add_argument('--header-rows', default='1:3')
+    p.add_argument('--orientation', choices=['horizontal', 'vertical'], default='horizontal')
+    p.add_argument('--header-cols', default='1:3')
     p.add_argument('--row', type=int)
     p.add_argument('--row-match')
     p.add_argument('--row-match-col', default='1')
+    p.add_argument('--col')
+    p.add_argument('--col-match')
+    p.add_argument('--col-match-row', type=int, default=1)
     p.add_argument('--data-start-row', type=int)
+    p.add_argument('--data-start-col')
     p.add_argument('--min-col', default='1')
     p.add_argument('--max-col')
+    p.add_argument('--min-row', type=int, default=1)
+    p.add_argument('--max-row', type=int)
     p.add_argument('--contains', action='store_true')
+    p.add_argument('--match-mode', choices=['exact', 'contains', 'wildcard', 'regex', 're', 'glob'], default='exact')
     p.add_argument('--case-sensitive', action='store_true')
     p.add_argument('--header-match-index', type=int, default=1)
     p.add_argument('--preview', action='store_true')
@@ -249,16 +268,22 @@ def main():
                 raise SystemExit('--as-number requires a numeric --value')
         try:
             header_start, header_end = _parse_row_range(args.header_rows)
+            header_start_col, header_end_col = _parse_axis_range(args.header_cols, numeric=False)
             headers = _parse_header_path(args.headers)
             result = excel_ir_plus.update_cell_by_multi_header_xlsx(
                 args.xlsx, args.out_xlsx, headers, value,
                 sheet=args.sheet,
                 header_start_row=header_start, header_end_row=header_end,
+                orientation=args.orientation,
+                header_start_col=header_start_col, header_end_col=header_end_col,
                 row=args.row, row_match=args.row_match, row_match_col=args.row_match_col,
-                data_start_row=args.data_start_row,
+                col=args.col, col_match=args.col_match, col_match_row=args.col_match_row,
+                data_start_row=args.data_start_row, data_start_col=args.data_start_col,
                 min_col=_parse_col_arg(args.min_col) or 1,
                 max_col=_parse_col_arg(args.max_col),
+                min_row=args.min_row, max_row=args.max_row,
                 contains=args.contains, case_sensitive=args.case_sensitive,
+                match_mode=args.match_mode,
                 header_match_index=args.header_match_index,
                 preview=args.preview, engine=args.engine,
             )

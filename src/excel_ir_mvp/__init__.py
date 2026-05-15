@@ -9,6 +9,7 @@ from .api import (
     diff,
     engines,
     header_columns,
+    header_rows,
     header_edit,
     inspect,
     parse,
@@ -20,7 +21,7 @@ from .api import (
 from .backends import BackendUnavailableError, available_engines, engine_status, resolve_engine
 from .types import HeaderEditOptions, ParseOptions, RebuildOptions, StreamEditOptions
 
-__version__ = "2.0.0a17"
+__version__ = "2.0.0a18"
 
 __all__ = [
     "WorkbookIR",
@@ -36,6 +37,7 @@ __all__ = [
     "stream_edit",
     "header_edit",
     "header_columns",
+    "header_rows",
     "anonymize",
     "engines",
     "ParseOptions",

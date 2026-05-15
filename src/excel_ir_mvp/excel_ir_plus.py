@@ -26,14 +26,14 @@ try:
     from .backends import available_engines, engine_status, resolve_engine, BackendUnavailableError
     from .excel_ir import (
         stream_find_cell_xlsx, stream_update_first_match_xlsx,
-        multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
+        multi_header_columns_xlsx, multi_header_rows_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
     )
 except ImportError:  # flat-source dev fallback
     import excel_ir
     from backends import available_engines, engine_status, resolve_engine, BackendUnavailableError
     from excel_ir import (
         stream_find_cell_xlsx, stream_update_first_match_xlsx,
-        multi_header_columns_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
+        multi_header_columns_xlsx, multi_header_rows_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
     )
 
 def _load_workbook(path: str, *, engine: str | None = None, for_modify: bool = False, **kwargs: Any) -> Any:

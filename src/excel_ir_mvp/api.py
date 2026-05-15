@@ -97,6 +97,16 @@ def header_edit(src: str | Path, dst: str | Path, *, headers: Sequence[Any], val
         "contains": opts.contains,
         "case_sensitive": opts.case_sensitive,
         "header_match_index": opts.header_match_index,
+        "match_mode": opts.match_mode,
+        "orientation": opts.orientation,
+        "header_start_col": opts.header_start_col,
+        "header_end_col": opts.header_end_col,
+        "col": opts.col,
+        "col_match": opts.col_match,
+        "col_match_row": opts.col_match_row,
+        "data_start_col": opts.data_start_col,
+        "min_row": opts.min_row,
+        "max_row": opts.max_row,
         "preview": opts.preview,
         "engine": opts.engine,
     }
@@ -105,8 +115,13 @@ def header_edit(src: str | Path, dst: str | Path, *, headers: Sequence[Any], val
 
 
 def header_columns(path: str | Path, *, sheet: str | None = None, header_rows: tuple[int, int] = (1, 3), engine: str = "openpyxl", min_col: int = 1, max_col: int | None = None) -> Dict[str, Any]:
-    """Expand merged/multi-row headers into per-column header paths."""
+    """Expand merged/multi-row horizontal headers into per-column paths."""
     return _xp.multi_header_columns_xlsx(str(path), sheet=sheet, header_start_row=header_rows[0], header_end_row=header_rows[1], min_col=min_col, max_col=max_col, engine=engine)
+
+
+def header_rows(path: str | Path, *, sheet: str | None = None, header_cols: tuple[int | str, int | str] = (1, 3), engine: str = "openpyxl", min_row: int = 1, max_row: int | None = None) -> Dict[str, Any]:
+    """Expand merged/multi-column vertical headers into per-row paths."""
+    return _xp.multi_header_rows_xlsx(str(path), sheet=sheet, header_start_col=header_cols[0], header_end_col=header_cols[1], min_row=min_row, max_row=max_row, engine=engine)
 
 
 def anonymize(src: str | Path, dst: str | Path, *, rewrite_formulas: bool = False, engine: str = "openpyxl") -> Dict[str, Any]:

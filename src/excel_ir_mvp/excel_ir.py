@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import fnmatch
 import json
 import math
 import re
@@ -292,17 +293,7 @@ def is_cell_material(cell) -> bool:
 
 
 def _stream_match(value: Any, match: Any, contains: bool = False, case_sensitive: bool = False) -> bool:
-    if isinstance(value, dict):
-        value = value.get("iso")
-    if contains:
-        left = "" if value is None else str(value)
-        right = "" if match is None else str(match)
-        if not case_sensitive:
-            left, right = left.lower(), right.lower()
-        return right in left
-    if isinstance(value, str) and isinstance(match, str) and not case_sensitive:
-        return value.lower() == match.lower()
-    return value == match
+    return _match_text(value, match, contains=contains, case_sensitive=case_sensitive)
 
 
 def _stream_cell_info(cell: Any, *, match_value: Any = None, visited: Optional[int] = None) -> Dict[str, Any]:
@@ -445,6 +436,67 @@ def _cell_value_with_merged(ws: Any, row: int, col: int) -> Any:
     return cell.value
 
 
+def _compile_pattern(pattern: str, *, case_sensitive: bool = False) -> re.Pattern[str]:
+    flags = 0 if case_sensitive else re.IGNORECASE
+    return re.compile(pattern, flags)
+
+
+def _match_text(value: Any, pattern: Any, *, mode: str = "exact", contains: bool = False, case_sensitive: bool = False) -> bool:
+    if isinstance(value, dict):
+        value = value.get("iso")
+    if mode == "exact" and contains:
+        mode = "contains"
+    left = "" if value is None else str(value)
+    right = "" if pattern is None else str(pattern)
+    if mode == "regex":
+        try:
+            return _compile_pattern(right, case_sensitive=case_sensitive).search(left) is not None
+        except re.error as exc:
+            raise ValueError(f"invalid regex pattern {right!r}: {exc}") from exc
+    if mode == "wildcard":
+        if not case_sensitive:
+            left, right = left.lower(), right.lower()
+        return fnmatch.fnmatchcase(left, right)
+    if mode == "contains":
+        if not case_sensitive:
+            left, right = left.lower(), right.lower()
+        return right in left
+    if isinstance(value, str) and isinstance(pattern, str):
+        if not case_sensitive:
+            return left.lower() == right.lower()
+        return left == right
+    return value == pattern
+
+
+def _match_mode_alias(mode: str | None, *, contains: bool = False) -> str:
+    if contains:
+        return "contains"
+    normalized = (mode or "exact").strip().lower()
+    aliases = {"re": "regex", "regexp": "regex", "glob": "wildcard", "fnmatch": "wildcard", "contains": "contains", "substring": "contains"}
+    normalized = aliases.get(normalized, normalized)
+    if normalized not in {"exact", "contains", "wildcard", "regex"}:
+        raise ValueError("match mode must be one of: exact, contains, wildcard, regex")
+    return normalized
+
+
+def _header_level_matches(actual: str, want: Any, *, mode: str = "exact", case_sensitive: bool = False) -> bool:
+    if isinstance(want, dict):
+        level_mode = _match_mode_alias(want.get("mode") or want.get("match") or mode)
+        if "regex" in want:
+            level_mode = "regex"
+            pattern = want.get("regex")
+        elif "wildcard" in want:
+            level_mode = "wildcard"
+            pattern = want.get("wildcard")
+        elif "contains" in want:
+            level_mode = "contains"
+            pattern = want.get("contains")
+        else:
+            pattern = want.get("value", want.get("pattern", ""))
+        return _match_text(actual, pattern, mode=level_mode, case_sensitive=case_sensitive)
+    return _match_text(actual, _header_label(want), mode=mode, case_sensitive=case_sensitive)
+
+
 def _col_index(col: int | str) -> int:
     if isinstance(col, int):
         return col
@@ -476,6 +528,37 @@ def _multi_header_columns_ws(ws: Any, header_start_row: int, header_end_row: int
     return columns
 
 
+def _multi_header_rows_ws(ws: Any, header_start_col: int, header_end_col: int, min_row: int = 1, max_row: Optional[int] = None, fill_blank: bool = True) -> List[Dict[str, Any]]:
+    if header_start_col < 1 or header_end_col < header_start_col:
+        raise ValueError("header columns must be a positive start:end range")
+    max_row = max_row or ws.max_row
+    col_values: Dict[Tuple[int, int], Any] = {}
+    for c in range(header_start_col, header_end_col + 1):
+        carry = None
+        for r in range(min_row, max_row + 1):
+            value = _cell_value_with_merged(ws, r, c)
+            if _header_label(value):
+                carry = value
+            elif fill_blank and carry is not None:
+                value = carry
+            col_values[(r, c)] = value
+    rows: List[Dict[str, Any]] = []
+    for r in range(min_row, max_row + 1):
+        levels = [_header_label(col_values.get((r, c))) for c in range(header_start_col, header_end_col + 1)]
+        path = [x for x in levels if x]
+        rows.append({"row": r, "levels": levels, "path": path})
+    return rows
+
+
+def multi_header_rows_xlsx(path: str, *, sheet: Optional[str] = None, header_start_col: int | str = 1, header_end_col: int | str = 3, min_row: int = 1, max_row: Optional[int] = None, engine: str | None = None) -> Dict[str, Any]:
+    wb = _load_workbook(path, engine=engine, data_only=False)
+    ws = wb[sheet] if sheet else wb.worksheets[0]
+    start_col = _col_index(header_start_col)
+    end_col = _col_index(header_end_col)
+    rows = _multi_header_rows_ws(ws, start_col, end_col, min_row=min_row, max_row=max_row)
+    return {"ok": True, "sheet": ws.title, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "rows": rows}
+
+
 def multi_header_columns_xlsx(path: str, *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, min_col: int = 1, max_col: Optional[int] = None, engine: str | None = None) -> Dict[str, Any]:
     wb = _load_workbook(path, engine=engine, data_only=False)
     ws = wb[sheet] if sheet else wb.worksheets[0]
@@ -483,59 +566,105 @@ def multi_header_columns_xlsx(path: str, *, sheet: Optional[str] = None, header_
     return {"ok": True, "sheet": ws.title, "header_rows": [header_start_row, header_end_row], "columns": columns}
 
 
-def _header_path_matches(path: List[str], headers: List[Any], *, contains: bool = False, case_sensitive: bool = False) -> bool:
-    expected = [_header_label(h) for h in headers if _header_label(h)]
+def _header_path_matches(path: List[str], headers: List[Any], *, contains: bool = False, case_sensitive: bool = False, match_mode: str = "exact") -> bool:
+    expected = [h for h in headers if _header_label(h) or isinstance(h, dict)]
     if len(path) != len(expected):
         return False
+    mode = _match_mode_alias(match_mode, contains=contains)
     for actual, want in zip(path, expected):
-        if not _stream_match(actual, want, contains=contains, case_sensitive=case_sensitive):
+        if not _header_level_matches(actual, want, mode=mode, case_sensitive=case_sensitive):
             return False
     return True
 
 
-def _locate_multi_header_cell_ws(ws: Any, headers: List[Any], *, header_start_row: int, header_end_row: int, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1) -> Dict[str, Any]:
-    columns = _multi_header_columns_ws(ws, header_start_row, header_end_row, min_col=min_col, max_col=max_col)
-    header_matches = [c for c in columns if _header_path_matches(c.get("path", []), headers, contains=contains, case_sensitive=case_sensitive)]
-    if not header_matches:
-        return {"ok": False, "found": False, "stopped_reason": "header_not_found", "sheet": ws.title, "headers": [_header_label(h) for h in headers], "header_rows": [header_start_row, header_end_row], "header_match_count": 0}
-    if header_match_index < 1 or header_match_index > len(header_matches):
-        return {"ok": False, "found": False, "stopped_reason": "header_match_index_out_of_range", "sheet": ws.title, "headers": [_header_label(h) for h in headers], "header_rows": [header_start_row, header_end_row], "header_match_count": len(header_matches)}
-    column = header_matches[header_match_index - 1]
-    if row is None:
-        if row_match is None:
-            raise ValueError("row or row_match is required")
-        scan_col = _col_index(row_match_col)
-        start = data_start_row or (header_end_row + 1)
-        for r in range(start, ws.max_row + 1):
-            value = _cell_value_with_merged(ws, r, scan_col)
-            if _stream_match(value, row_match, contains=contains, case_sensitive=case_sensitive):
-                row = r
-                break
+def _selector_payload(headers: List[Any]) -> List[Any]:
+    payload = []
+    for h in headers:
+        if isinstance(h, dict):
+            payload.append(h)
+        else:
+            label = _header_label(h)
+            if label:
+                payload.append(label)
+    return payload
+
+
+def _locate_multi_header_cell_ws(ws: Any, headers: List[Any], *, header_start_row: int, header_end_row: int, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, match_mode: str = "exact", orientation: str = "horizontal", header_start_col: int | str = 1, header_end_col: int | str = 3, col: Optional[int | str] = None, col_match: Any = None, col_match_row: int = 1, data_start_col: Optional[int | str] = None, min_row: int = 1, max_row: Optional[int] = None) -> Dict[str, Any]:
+    orientation = (orientation or "horizontal").strip().lower()
+    mode = _match_mode_alias(match_mode, contains=contains)
+    headers_payload = _selector_payload(headers)
+    if orientation in {"horizontal", "columns", "col", "x"}:
+        columns = _multi_header_columns_ws(ws, header_start_row, header_end_row, min_col=min_col, max_col=max_col)
+        header_matches = [c for c in columns if _header_path_matches(c.get("path", []), headers, contains=False, case_sensitive=case_sensitive, match_mode=mode)]
+        if not header_matches:
+            return {"ok": False, "found": False, "stopped_reason": "header_not_found", "sheet": ws.title, "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "header_match_count": 0}
+        if header_match_index < 1 or header_match_index > len(header_matches):
+            return {"ok": False, "found": False, "stopped_reason": "header_match_index_out_of_range", "sheet": ws.title, "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "header_match_count": len(header_matches)}
+        column = header_matches[header_match_index - 1]
         if row is None:
-            return {"ok": False, "found": False, "stopped_reason": "row_not_found", "sheet": ws.title, "headers": [_header_label(h) for h in headers], "header_rows": [header_start_row, header_end_row], "column": column, "row_match": normalized_value(row_match), "row_match_col": get_column_letter(scan_col)}
-    target = ws.cell(row, int(column["col"]))
-    return {"ok": True, "found": True, "sheet": ws.title, "headers": [_header_label(h) for h in headers], "header_rows": [header_start_row, header_end_row], "header_match_count": len(header_matches), "column": column, "row": row, "target": _stream_cell_info(target)}
+            if row_match is None:
+                row = data_start_row or (header_end_row + 1)
+            else:
+                scan_col = _col_index(row_match_col)
+                start = data_start_row or (header_end_row + 1)
+                for r in range(start, ws.max_row + 1):
+                    value = _cell_value_with_merged(ws, r, scan_col)
+                    if _match_text(value, row_match, mode=mode, case_sensitive=case_sensitive):
+                        row = r
+                        break
+                if row is None:
+                    return {"ok": False, "found": False, "stopped_reason": "row_not_found", "sheet": ws.title, "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "column": column, "row_match": normalized_value(row_match), "row_match_col": get_column_letter(scan_col)}
+        target = ws.cell(int(row), int(column["col"]))
+        return {"ok": True, "found": True, "sheet": ws.title, "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "match_mode": mode, "header_match_count": len(header_matches), "column": column, "row": row, "target": _stream_cell_info(target)}
+    if orientation in {"vertical", "rows", "row", "y"}:
+        start_col = _col_index(header_start_col)
+        end_col = _col_index(header_end_col)
+        rows = _multi_header_rows_ws(ws, start_col, end_col, min_row=min_row, max_row=max_row)
+        header_matches = [r for r in rows if _header_path_matches(r.get("path", []), headers, contains=False, case_sensitive=case_sensitive, match_mode=mode)]
+        if not header_matches:
+            return {"ok": False, "found": False, "stopped_reason": "header_not_found", "sheet": ws.title, "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "header_match_count": 0}
+        if header_match_index < 1 or header_match_index > len(header_matches):
+            return {"ok": False, "found": False, "stopped_reason": "header_match_index_out_of_range", "sheet": ws.title, "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "header_match_count": len(header_matches)}
+        row_header = header_matches[header_match_index - 1]
+        target_col: Optional[int] = _col_index(col) if col is not None else None
+        if target_col is None:
+            if col_match is None:
+                target_col = _col_index(data_start_col) if data_start_col is not None else end_col + 1
+            else:
+                scan_row = int(col_match_row)
+                start = _col_index(data_start_col) if data_start_col is not None else end_col + 1
+                for c in range(start, ws.max_column + 1):
+                    value = _cell_value_with_merged(ws, scan_row, c)
+                    if _match_text(value, col_match, mode=mode, case_sensitive=case_sensitive):
+                        target_col = c
+                        break
+                if target_col is None:
+                    return {"ok": False, "found": False, "stopped_reason": "column_not_found", "sheet": ws.title, "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "row_header": row_header, "col_match": normalized_value(col_match), "col_match_row": scan_row}
+        target = ws.cell(int(row_header["row"]), int(target_col))
+        return {"ok": True, "found": True, "sheet": ws.title, "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "match_mode": mode, "header_match_count": len(header_matches), "row_header": row_header, "row": row_header["row"], "col": target_col, "target": _stream_cell_info(target)}
+    raise ValueError("orientation must be horizontal or vertical")
 
 
-def locate_cell_by_multi_header_xlsx(path: str, headers: List[Any], *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, engine: str | None = None) -> Dict[str, Any]:
+def locate_cell_by_multi_header_xlsx(path: str, headers: List[Any], *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, match_mode: str = "exact", orientation: str = "horizontal", header_start_col: int | str = 1, header_end_col: int | str = 3, col: Optional[int | str] = None, col_match: Any = None, col_match_row: int = 1, data_start_col: Optional[int | str] = None, min_row: int = 1, max_row: Optional[int] = None, engine: str | None = None) -> Dict[str, Any]:
     wb = _load_workbook(path, engine=engine, data_only=False)
     ws = wb[sheet] if sheet else wb.worksheets[0]
-    return _locate_multi_header_cell_ws(ws, headers, header_start_row=header_start_row, header_end_row=header_end_row, row=row, row_match=row_match, row_match_col=row_match_col, data_start_row=data_start_row, min_col=min_col, max_col=max_col, contains=contains, case_sensitive=case_sensitive, header_match_index=header_match_index)
+    return _locate_multi_header_cell_ws(ws, headers, header_start_row=header_start_row, header_end_row=header_end_row, row=row, row_match=row_match, row_match_col=row_match_col, data_start_row=data_start_row, min_col=min_col, max_col=max_col, contains=contains, case_sensitive=case_sensitive, header_match_index=header_match_index, match_mode=match_mode, orientation=orientation, header_start_col=header_start_col, header_end_col=header_end_col, col=col, col_match=col_match, col_match_row=col_match_row, data_start_col=data_start_col, min_row=min_row, max_row=max_row)
 
 
-def update_cell_by_multi_header_xlsx(src_path: str, out_path: str, headers: List[Any], new_value: Any, *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, preview: bool = False, engine: str | None = None) -> Dict[str, Any]:
+def update_cell_by_multi_header_xlsx(src_path: str, out_path: str, headers: List[Any], new_value: Any, *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, match_mode: str = "exact", orientation: str = "horizontal", header_start_col: int | str = 1, header_end_col: int | str = 3, col: Optional[int | str] = None, col_match: Any = None, col_match_row: int = 1, data_start_col: Optional[int | str] = None, min_row: int = 1, max_row: Optional[int] = None, preview: bool = False, engine: str | None = None) -> Dict[str, Any]:
     wb = _load_workbook_for_modify(src_path, engine=engine, data_only=False)
     ws = wb[sheet] if sheet else wb.worksheets[0]
-    result = _locate_multi_header_cell_ws(ws, headers, header_start_row=header_start_row, header_end_row=header_end_row, row=row, row_match=row_match, row_match_col=row_match_col, data_start_row=data_start_row, min_col=min_col, max_col=max_col, contains=contains, case_sensitive=case_sensitive, header_match_index=header_match_index)
+    result = _locate_multi_header_cell_ws(ws, headers, header_start_row=header_start_row, header_end_row=header_end_row, row=row, row_match=row_match, row_match_col=row_match_col, data_start_row=data_start_row, min_col=min_col, max_col=max_col, contains=contains, case_sensitive=case_sensitive, header_match_index=header_match_index, match_mode=match_mode, orientation=orientation, header_start_col=header_start_col, header_end_col=header_end_col, col=col, col_match=col_match, col_match_row=col_match_row, data_start_col=data_start_col, min_row=min_row, max_row=max_row)
     result.update({"preview": preview, "output": None if preview else out_path})
     if not result.get("found"):
         if (not preview) and src_path != out_path:
             shutil.copyfile(src_path, out_path)
         result["updated"] = False
         return result
-    target = ws.cell(int(result["row"]), int(result["column"]["col"]))
+    target_col = result.get("col") or int(result.get("column", {}).get("col"))
+    target = ws.cell(int(result["row"]), int(target_col))
     old_value = target.value
-    change = {"old_value": normalized_value(old_value), "new_value": normalized_value(new_value), "target": _stream_cell_info(target), "column": result.get("column")}
+    change = {"old_value": normalized_value(old_value), "new_value": normalized_value(new_value), "target": _stream_cell_info(target), "column": result.get("column"), "row_header": result.get("row_header")}
     result.update({"old_value": change["old_value"], "new_value": change["new_value"], "change": change, "target_coord": target.coordinate, "updated": not preview})
     if not preview:
         target.value = denormalize_value(new_value)

@@ -51,6 +51,7 @@ SOURCE_COMMANDS = [
     ['python3', 'excel_ir_cli.py', 'parse', 'tests/fixtures/complex_report.xlsx', 'ci_selected_sheet.ir.json', '--sheet', '经营驾驶舱'],
     ['python3', 'excel_ir_cli.py', 'parse', 'tests/fixtures/complex_report.xlsx', 'ci_fast.ir.json', '--fast'],
     ['python3', 'excel_ir_cli.py', 'rebuild', 'ci_selected_sheet.ir.json', 'ci_selected_sheet.xlsx', '--sheet', '经营驾驶舱'],
+    ['python3', 'excel_ir_cli.py', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_header_regex_preview.xlsx', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '999', '--as-number', '--preview'],
     ['python3', 'excel_ir_cli.py', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_inspect.json', '--engine', 'openpyxl'],
     ['python3', 'excel_ir_cli.py', 'engines'],
     ['python3', 'excel_ir_cli.py', 'compare-ir', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_compare_ir.json'],
@@ -87,6 +88,7 @@ INSTALLED_COMMANDS = [
     ['excel-ir', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_installed_stream_edit.xlsx', '--match', '总计', '--value', '合计'],
     ['excel-ir', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_installed_stream_edit_preview.xlsx', '--match', '业务线', '--value', '收入本月', '--offset-row', '1', '--offset-col', '2', '--preview'],
     ['excel-ir', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_installed_header_edit.xlsx', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '999', '--as-number'],
+    ['excel-ir', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_installed_header_regex_preview.xlsx', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '999', '--as-number', '--preview'],
 ]
 
 

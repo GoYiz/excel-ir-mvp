@@ -22,7 +22,8 @@ summary = xir.inspect("report.xlsx")
 | `apply_patch(ir, patch, dry_run=False)` | Semantic patch facade. |
 | `stream_edit(src, dst, match=..., value=..., options=...)` | Human-like streaming edit. |
 | `header_edit(src, dst, headers=..., value=..., options=...)` | Multi-level header edit. |
-| `header_columns(path, header_rows=(1, 3))` | Expand merged/multi-row headers. |
+| `header_columns(path, header_rows=(1, 3))` | Expand merged/multi-row horizontal headers. |
+| `header_rows(path, header_cols=(1, 3))` | Expand merged/multi-column vertical headers. |
 | `anonymize(src, dst)` | Produce shareable redacted workbook. |
 | `engines()` | Engine status. |
 
@@ -53,6 +54,22 @@ result = xir.header_edit(
     headers=["2026", "5", "8"],
     value=999,
     options=xir.HeaderEditOptions(row_match="门店A"),
+)
+
+regex_preview = xir.header_edit(
+    "report.xlsx",
+    "ignored.xlsx",
+    headers=["202[0-9]", "5", "[78]"],
+    value=999,
+    options=xir.HeaderEditOptions(match_mode="regex", preview=True),
+)
+
+vertical = xir.header_edit(
+    "vertical.xlsx",
+    "edited.xlsx",
+    headers=["收入", "线下"],
+    value=999,
+    options=xir.HeaderEditOptions(orientation="vertical", header_start_col="A", header_end_col="B", min_row=2, col_match="Q2"),
 )
 ```
 

@@ -66,4 +66,14 @@ class HeaderEditOptions:
     contains: bool = False
     case_sensitive: bool = False
     header_match_index: int = 1
+    match_mode: str = "exact"
+    orientation: str = "horizontal"
+    header_start_col: Union[int, str] = 1
+    header_end_col: Union[int, str] = 3
+    col: Optional[Union[int, str]] = None
+    col_match: object = None
+    col_match_row: int = 1
+    data_start_col: Optional[Union[int, str]] = None
+    min_row: int = 1
+    max_row: Optional[int] = None
     preview: bool = False
