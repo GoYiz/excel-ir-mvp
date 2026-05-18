@@ -1,6 +1,12 @@
 # Multi-level Header Edits
 
-`excel-ir header-edit` and `excel_ir_mvp.header_edit()` locate cells through human report headers rather than fixed coordinates.
+Multi-header operations are **IR-first**. The intended flow is:
+
+```text
+xlsx -> parse to IR/JSON -> locate or update IR -> rebuild xlsx
+```
+
+This avoids repeatedly opening large XLSX files and keeps semantic edits auditable in JSON.
 
 Supported layouts:
 
@@ -19,33 +25,44 @@ Header values are expanded through merged cells and adjacent blank cells, so a m
 门店B   11  21  31     41  51  61
 ```
 
-Update `2026 / 5 / 8` for row `门店A`:
+Parse once:
 
 ```bash
-excel-ir header-edit workbook.xlsx edited.xlsx \
+excel-ir parse workbook.xlsx workbook.ir.json --sheet 日期表
+```
+
+Locate only:
+
+```bash
+excel-ir header-locate workbook.ir.json \
+  --sheet 日期表 \
+  --header-rows 1:3 \
+  --headers 2026/5/8 \
+  --row-match 门店A
+```
+
+Update IR, then rebuild:
+
+```bash
+excel-ir header-edit workbook.ir.json edited.ir.json \
   --sheet 日期表 \
   --header-rows 1:3 \
   --headers 2026/5/8 \
   --row-match 门店A \
   --value 999 \
   --as-number
+
+excel-ir rebuild edited.ir.json edited.xlsx
 ```
 
-If `--row` and `--row-match` are omitted, the target row defaults to the first data row after `--header-rows`:
-
-```bash
-excel-ir header-edit workbook.xlsx edited.xlsx \
-  --headers 2026/5/8 \
-  --value 999 \
-  --as-number
-```
+If `--row` and `--row-match` are omitted, the target row defaults to the first data row after `--header-rows`.
 
 ## Regex and wildcard matching
 
 Use `--match-mode regex` for regular expressions:
 
 ```bash
-excel-ir header-edit workbook.xlsx ignored.xlsx \
+excel-ir header-edit workbook.ir.json ignored.ir.json \
   --headers '202[0-9]/5/[78]' \
   --match-mode regex \
   --value 999 \
@@ -55,7 +72,7 @@ excel-ir header-edit workbook.xlsx ignored.xlsx \
 Use `--match-mode wildcard` for shell-style `*` / `?` matching:
 
 ```bash
-excel-ir header-edit workbook.xlsx edited.xlsx \
+excel-ir header-edit workbook.ir.json edited.ir.json \
   --headers '202?/*/8' \
   --match-mode wildcard \
   --value 999 \
@@ -67,9 +84,9 @@ Python supports per-level match dictionaries:
 ```python
 import excel_ir_mvp as xir
 
-xir.header_edit(
-    "dates.xlsx",
-    "edited.xlsx",
+ir = xir.parse("dates.xlsx")
+edited_ir, result = xir.header_edit(
+    ir,
     headers=[{"regex": "202[0-9]"}, {"value": "5"}, {"wildcard": "*"}],
     value=999,
     options=xir.HeaderEditOptions(preview=True),
@@ -89,7 +106,8 @@ xir.header_edit(
 Here `收入 / 线下` identifies a row, and `Q2` identifies the target column:
 
 ```bash
-excel-ir header-edit vertical.xlsx edited.xlsx \
+excel-ir parse vertical.xlsx vertical.ir.json --sheet 纵向表
+excel-ir header-edit vertical.ir.json vertical.edited.ir.json \
   --orientation vertical \
   --header-cols A:B \
   --min-row 2 \
@@ -97,9 +115,60 @@ excel-ir header-edit vertical.xlsx edited.xlsx \
   --col-match Q2 \
   --value 999 \
   --as-number
+excel-ir rebuild vertical.edited.ir.json vertical.edited.xlsx
 ```
 
 If `--col` and `--col-match` are omitted, the target column defaults to the first data column after `--header-cols`.
+
+## Public API
+
+```python
+import excel_ir_mvp as xir
+
+ir = xir.parse("workbook.xlsx", sheets="日期表")
+located = xir.header_locate(
+    ir,
+    headers=["2026", "5", "8"],
+    options=xir.HeaderEditOptions(sheet="日期表", row_match="门店A"),
+)
+
+edited_ir, result = xir.header_edit(
+    ir,
+    headers=["2026", "5", "8"],
+    value=999,
+    options=xir.HeaderEditOptions(sheet="日期表", row_match="门店A"),
+)
+
+xir.rebuild(edited_ir, "edited.xlsx")
+```
+
+Vertical:
+
+```python
+vertical_ir = xir.parse("vertical.xlsx", sheets="纵向表")
+edited_ir, result = xir.header_edit(
+    vertical_ir,
+    headers=["收入", "线下"],
+    value=999,
+    options=xir.HeaderEditOptions(
+        sheet="纵向表",
+        orientation="vertical",
+        header_start_col="A",
+        header_end_col="B",
+        min_row=2,
+        col_match="Q2",
+    ),
+)
+```
+
+Inspect expanded headers from IR:
+
+```python
+cols = xir.header_columns(ir, header_rows=(1, 3))
+rows = xir.header_rows(vertical_ir, header_cols=("A", "B"), min_row=2)
+```
+
+Convenience XLSX helpers still exist in implementation modules for explicit compatibility, but the recommended package flow is IR-first.
 
 ## Main options
 
@@ -122,36 +191,5 @@ If `--col` and `--col-match` are omitted, the target column defaults to the firs
   - `--col-match-row N`, default `1`
   - `--data-start-col COL`
   - `--min-row` / `--max-row`
-- `--preview`: return the plan only.
+- `--preview`: return the plan only. The output IR is still written unchanged for pipeline convenience.
 - `--as-number`: coerce `--value` to int/float.
-
-## Public API
-
-```python
-import excel_ir_mvp as xir
-
-xir.header_edit(
-    "workbook.xlsx",
-    "edited.xlsx",
-    headers=["2026", "5", "8"],
-    value=999,
-    options=xir.HeaderEditOptions(sheet="日期表", row_match="门店A"),
-)
-
-xir.header_edit(
-    "vertical.xlsx",
-    "edited.xlsx",
-    headers=["收入", "线下"],
-    value=999,
-    options=xir.HeaderEditOptions(
-        orientation="vertical",
-        header_start_col="A",
-        header_end_col="B",
-        min_row=2,
-        col_match="Q2",
-    ),
-)
-
-cols = xir.header_columns("dates.xlsx", header_rows=(1, 3))
-rows = xir.header_rows("vertical.xlsx", header_cols=("A", "B"), min_row=2)
-```

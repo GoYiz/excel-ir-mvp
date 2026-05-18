@@ -27,6 +27,7 @@ try:
     from .excel_ir import (
         stream_find_cell_xlsx, stream_update_first_match_xlsx,
         multi_header_columns_xlsx, multi_header_rows_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
+        multi_header_columns_ir, multi_header_rows_ir, locate_cell_by_multi_header_ir, update_cell_by_multi_header_ir,
     )
 except ImportError:  # flat-source dev fallback
     import excel_ir
@@ -34,6 +35,7 @@ except ImportError:  # flat-source dev fallback
     from excel_ir import (
         stream_find_cell_xlsx, stream_update_first_match_xlsx,
         multi_header_columns_xlsx, multi_header_rows_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx,
+        multi_header_columns_ir, multi_header_rows_ir, locate_cell_by_multi_header_ir, update_cell_by_multi_header_ir,
     )
 
 def _load_workbook(path: str, *, engine: str | None = None, for_modify: bool = False, **kwargs: Any) -> Any:

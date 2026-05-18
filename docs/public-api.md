@@ -48,29 +48,36 @@ preview = xir.stream_edit(
     options=xir.StreamEditOptions(offset_row=1, offset_col=2, preview=True),
 )
 
-result = xir.header_edit(
-    "report.xlsx",
-    "edited.xlsx",
+ir = xir.parse("report.xlsx")
+
+located = xir.header_locate(
+    ir,
+    headers=["2026", "5", "8"],
+    options=xir.HeaderEditOptions(row_match="门店A"),
+)
+
+edited_ir, result = xir.header_edit(
+    ir,
     headers=["2026", "5", "8"],
     value=999,
     options=xir.HeaderEditOptions(row_match="门店A"),
 )
 
-regex_preview = xir.header_edit(
-    "report.xlsx",
-    "ignored.xlsx",
+regex_ir, regex_preview = xir.header_edit(
+    ir,
     headers=["202[0-9]", "5", "[78]"],
     value=999,
     options=xir.HeaderEditOptions(match_mode="regex", preview=True),
 )
 
-vertical = xir.header_edit(
-    "vertical.xlsx",
-    "edited.xlsx",
+vertical_ir = xir.parse("vertical.xlsx")
+vertical_ir2, vertical = xir.header_edit(
+    vertical_ir,
     headers=["收入", "线下"],
     value=999,
     options=xir.HeaderEditOptions(orientation="vertical", header_start_col="A", header_end_col="B", min_row=2, col_match="Q2"),
 )
+xir.rebuild(edited_ir, "edited.xlsx")
 ```
 
 ## Removed old top-level API

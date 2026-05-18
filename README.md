@@ -7,7 +7,7 @@ Excel IR MVP is a Python package for complex, human-authored Excel reports. It p
 
 Repository: https://github.com/GoYiz/excel-ir-mvp
 
-Current prerelease: **2.0.0a18**. PyPI publishing is intentionally skipped for now; install from source or GitHub Releases.
+Current prerelease: **2.0.0a19**. PyPI publishing is intentionally skipped for now; install from source or GitHub Releases.
 
 ## Why this exists
 
@@ -29,7 +29,7 @@ python3 -m pip install -e .
 For a built artifact, download the wheel from GitHub Releases and install it:
 
 ```bash
-python3 -m pip install excel_ir_mvp-2.0.0a18-py3-none-any.whl
+python3 -m pip install excel_ir_mvp-2.0.0a19-py3-none-any.whl
 ```
 
 ## Python quick start
@@ -161,32 +161,41 @@ xir.stream_edit(
 
 ## Multi-level headers
 
-Horizontal headers locate a column from multi-row headers, then select a row. If `row` and `row_match` are omitted, the first data row after the header rows is used.
+Horizontal headers locate a column from multi-row headers, then select a row. The API is IR-first: parse once, locate/edit the JSON IR, then rebuild.
 
 ```python
-xir.header_edit(
-    "tests/fixtures/multi_header_dates.xlsx",
-    "edited.xlsx",
+ir = xir.parse("tests/fixtures/multi_header_dates.xlsx", sheets="日期表")
+
+located = xir.header_locate(
+    ir,
+    headers=["2026", "5", "8"],
+    options=xir.HeaderEditOptions(sheet="日期表", row_match="门店A"),
+)
+
+edited_ir, result = xir.header_edit(
+    ir,
     headers=["2026", "5", "8"],
     value=999,
     options=xir.HeaderEditOptions(sheet="日期表", row_match="门店A"),
 )
+
+xir.rebuild(edited_ir, "edited.xlsx")
 ```
+
+If `row` and `row_match` are omitted, the first data row after the header rows is used.
 
 Regex and wildcard header matching:
 
 ```python
 xir.header_edit(
-    "dates.xlsx",
-    "edited.xlsx",
+    ir,
     headers=["202[0-9]", "5", "[78]"],
     value=999,
     options=xir.HeaderEditOptions(match_mode="regex", preview=True),
 )
 
 xir.header_edit(
-    "dates.xlsx",
-    "edited.xlsx",
+    ir,
     headers=["202?", "*", "8"],
     value=999,
     options=xir.HeaderEditOptions(match_mode="wildcard", header_match_index=1),
@@ -197,8 +206,7 @@ Per-level match dictionaries are also supported:
 
 ```python
 xir.header_edit(
-    "dates.xlsx",
-    "edited.xlsx",
+    ir,
     headers=[{"regex": "202[0-9]"}, {"value": "5"}, {"wildcard": "*"}],
     value=999,
     options=xir.HeaderEditOptions(preview=True),
@@ -208,9 +216,10 @@ xir.header_edit(
 Vertical headers locate a row from multi-column headers, then select a column. If `col` and `col_match` are omitted, the first data column after the header columns is used.
 
 ```python
-xir.header_edit(
-    "vertical.xlsx",
-    "edited.xlsx",
+vertical_ir = xir.parse("vertical.xlsx", sheets="纵向表")
+
+edited_ir, result = xir.header_edit(
+    vertical_ir,
     headers=["收入", "线下"],
     value=999,
     options=xir.HeaderEditOptions(
@@ -227,8 +236,8 @@ xir.header_edit(
 Inspect expanded headers:
 
 ```python
-cols = xir.header_columns("dates.xlsx", sheet="日期表", header_rows=(1, 3))
-rows = xir.header_rows("vertical.xlsx", sheet="纵向表", header_cols=("A", "B"), min_row=2)
+cols = xir.header_columns(ir, sheet="日期表", header_rows=(1, 3))
+rows = xir.header_rows(vertical_ir, sheet="纵向表", header_cols=("A", "B"), min_row=2)
 ```
 
 ## Semantic patch example
@@ -275,10 +284,15 @@ excel-ir stream-edit report.xlsx ignored.xlsx --match 业务线 --value 收入�
 Multi-header CLI:
 
 ```bash
-excel-ir header-edit dates.xlsx edited.xlsx --sheet 日期表 --header-rows 1:3 --headers 2026/5/8 --row-match 门店A --value 999 --as-number
-excel-ir header-edit dates.xlsx ignored.xlsx --headers '202[0-9]/5/[78]' --match-mode regex --value 999 --preview
-excel-ir header-edit dates.xlsx edited.xlsx --headers '202?/*/8' --match-mode wildcard --value 999 --as-number
-excel-ir header-edit vertical.xlsx edited.xlsx --orientation vertical --header-cols A:B --min-row 2 --headers 收入/线下 --col-match Q2 --value 999 --as-number
+excel-ir parse dates.xlsx dates.ir.json --sheet 日期表
+excel-ir header-locate dates.ir.json --sheet 日期表 --headers 2026/5/8 --row-match 门店A
+excel-ir header-edit dates.ir.json dates.edited.ir.json --sheet 日期表 --header-rows 1:3 --headers 2026/5/8 --row-match 门店A --value 999 --as-number
+excel-ir rebuild dates.edited.ir.json edited.xlsx
+excel-ir header-edit dates.ir.json ignored.ir.json --headers '202[0-9]/5/[78]' --match-mode regex --value 999 --preview
+excel-ir header-edit dates.ir.json dates.wildcard.ir.json --headers '202?/*/8' --match-mode wildcard --value 999 --as-number
+excel-ir parse vertical.xlsx vertical.ir.json --sheet 纵向表
+excel-ir header-edit vertical.ir.json vertical.edited.ir.json --orientation vertical --header-cols A:B --min-row 2 --headers 收入/线下 --col-match Q2 --value 999 --as-number
+excel-ir rebuild vertical.edited.ir.json vertical.edited.xlsx
 ```
 
 Metadata CLI:

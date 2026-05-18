@@ -16,12 +16,14 @@ excel-ir parse large.xlsx lean.ir.json --sheet Data --no-formula-cache --no-extr
 excel-ir parse workbook.xlsx selected.ir.json --sheet Sheet1 --sheet Sheet2
 excel-ir rebuild selected.ir.json selected.xlsx --sheet Sheet1
 excel-ir parse workbook.xlsx out.ir.json --engine auto
-excel-ir header-edit workbook.xlsx edited.xlsx --headers 2026/5/8 --row-match 门店A --value 999 --as-number
-excel-ir header-edit workbook.xlsx edited.xlsx --headers 2026/5/8 --value 999 --as-number
-excel-ir header-edit workbook.xlsx ignored.xlsx --headers '202[0-9]/5/[78]' --match-mode regex --value 999 --preview
-excel-ir header-edit workbook.xlsx edited.xlsx --headers '202?/*/8' --match-mode wildcard --value 999 --as-number
-excel-ir header-edit vertical.xlsx edited.xlsx --orientation vertical --header-cols A:B --min-row 2 --headers 收入/线下 --col-match Q2 --value 999 --as-number
-excel-ir header-edit workbook.xlsx ignored.xlsx --headers '["2026","5","8"]' --row-match 门店A --value 999 --preview
+excel-ir header-locate out.ir.json --headers 2026/5/8 --row-match 门店A
+excel-ir header-edit out.ir.json edited.ir.json --headers 2026/5/8 --row-match 门店A --value 999 --as-number
+excel-ir rebuild edited.ir.json edited.xlsx
+excel-ir header-edit out.ir.json edited.ir.json --headers 2026/5/8 --value 999 --as-number
+excel-ir header-edit out.ir.json ignored.ir.json --headers '202[0-9]/5/[78]' --match-mode regex --value 999 --preview
+excel-ir header-edit out.ir.json edited.ir.json --headers '202?/*/8' --match-mode wildcard --value 999 --as-number
+excel-ir header-edit vertical.ir.json vertical.edited.ir.json --orientation vertical --header-cols A:B --min-row 2 --headers 收入/线下 --col-match Q2 --value 999 --as-number
+excel-ir header-edit out.ir.json ignored.ir.json --headers '["2026","5","8"]' --row-match 门店A --value 999 --preview
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 总计 --value 合计
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 备注 --value 说明 --start right
 excel-ir stream-edit workbook.xlsx edited.xlsx --match 云业务 --value 云事业部 --all

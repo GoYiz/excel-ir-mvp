@@ -116,8 +116,32 @@ def main():
     p.add_argument('--engine', default='openpyxl', choices=['openpyxl', 'wolfxl', 'auto'])
     p.add_argument('--as-number', action='store_true')
 
+    p = sub.add_parser('header-locate')
+    p.add_argument('ir_json')
+    p.add_argument('--headers', required=True, help='JSON array or slash-separated path, e.g. ["2026","5","8"] or 2026/5/8')
+    p.add_argument('--sheet')
+    p.add_argument('--header-rows', default='1:3')
+    p.add_argument('--orientation', choices=['horizontal', 'vertical'], default='horizontal')
+    p.add_argument('--header-cols', default='1:3')
+    p.add_argument('--row', type=int)
+    p.add_argument('--row-match')
+    p.add_argument('--row-match-col', default='1')
+    p.add_argument('--col')
+    p.add_argument('--col-match')
+    p.add_argument('--col-match-row', type=int, default=1)
+    p.add_argument('--data-start-row', type=int)
+    p.add_argument('--data-start-col')
+    p.add_argument('--min-col', default='1')
+    p.add_argument('--max-col')
+    p.add_argument('--min-row', type=int, default=1)
+    p.add_argument('--max-row', type=int)
+    p.add_argument('--contains', action='store_true')
+    p.add_argument('--match-mode', choices=['exact', 'contains', 'wildcard', 'regex', 're', 'glob'], default='exact')
+    p.add_argument('--case-sensitive', action='store_true')
+    p.add_argument('--header-match-index', type=int, default=1)
+
     p = sub.add_parser('header-edit')
-    p.add_argument('xlsx'); p.add_argument('out_xlsx')
+    p.add_argument('ir_json'); p.add_argument('out_ir')
     p.add_argument('--headers', required=True, help='JSON array or slash-separated path, e.g. ["2026","5","8"] or 2026/5/8')
     p.add_argument('--value', required=True)
     p.add_argument('--sheet')
@@ -259,9 +283,9 @@ def main():
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if not result.get('found'):
             raise SystemExit(1)
-    elif args.cmd == 'header-edit':
-        value = args.value
-        if args.as_number:
+    elif args.cmd in {'header-locate', 'header-edit'}:
+        value = getattr(args, 'value', None)
+        if getattr(args, 'as_number', False):
             try:
                 value = float(value) if ('.' in value) else int(value)
             except ValueError:
@@ -270,8 +294,7 @@ def main():
             header_start, header_end = _parse_row_range(args.header_rows)
             header_start_col, header_end_col = _parse_axis_range(args.header_cols, numeric=False)
             headers = _parse_header_path(args.headers)
-            result = excel_ir_plus.update_cell_by_multi_header_xlsx(
-                args.xlsx, args.out_xlsx, headers, value,
+            params = dict(
                 sheet=args.sheet,
                 header_start_row=header_start, header_end_row=header_end,
                 orientation=args.orientation,
@@ -285,8 +308,14 @@ def main():
                 contains=args.contains, case_sensitive=args.case_sensitive,
                 match_mode=args.match_mode,
                 header_match_index=args.header_match_index,
-                preview=args.preview, engine=args.engine,
             )
+            ir = excel_ir_plus.load_json(args.ir_json)
+            if args.cmd == 'header-locate':
+                result = excel_ir_plus.locate_cell_by_multi_header_ir(ir, headers, **params)
+            else:
+                out_ir, result = excel_ir_plus.update_cell_by_multi_header_ir(ir, headers, value, preview=args.preview, **params)
+                excel_ir_plus.save_json(out_ir, args.out_ir)
+                result['output_ir'] = args.out_ir
         except ValueError as exc:
             raise SystemExit(str(exc))
         print(json.dumps(result, ensure_ascii=False, indent=2))

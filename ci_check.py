@@ -51,7 +51,8 @@ SOURCE_COMMANDS = [
     ['python3', 'excel_ir_cli.py', 'parse', 'tests/fixtures/complex_report.xlsx', 'ci_selected_sheet.ir.json', '--sheet', '经营驾驶舱'],
     ['python3', 'excel_ir_cli.py', 'parse', 'tests/fixtures/complex_report.xlsx', 'ci_fast.ir.json', '--fast'],
     ['python3', 'excel_ir_cli.py', 'rebuild', 'ci_selected_sheet.ir.json', 'ci_selected_sheet.xlsx', '--sheet', '经营驾驶舱'],
-    ['python3', 'excel_ir_cli.py', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_header_regex_preview.xlsx', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '999', '--as-number', '--preview'],
+    ['python3', 'excel_ir_cli.py', 'parse', 'tests/fixtures/multi_header_dates.xlsx', 'ci_header.ir.json'],
+    ['python3', 'excel_ir_cli.py', 'header-edit', 'ci_header.ir.json', 'ci_header_regex_preview.ir.json', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '999', '--as-number', '--preview'],
     ['python3', 'excel_ir_cli.py', 'inspect', 'tests/fixtures/complex_report.xlsx', '--out', 'ci_inspect.json', '--engine', 'openpyxl'],
     ['python3', 'excel_ir_cli.py', 'engines'],
     ['python3', 'excel_ir_cli.py', 'compare-ir', 'tests/fixtures/complex_ir_v07.json', 'tests/fixtures/complex_ir_v07.json', 'ci_compare_ir.json'],
@@ -60,8 +61,9 @@ SOURCE_COMMANDS = [
     ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit.xlsx', '--match', '总计', '--value', '合计'],
     ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit_right.xlsx', '--match', '备注', '--value', '说明', '--start', 'right'],
     ['python3', 'excel_ir_cli.py', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_stream_edit_preview.xlsx', '--match', '业务线', '--value', '收入本月', '--offset-row', '1', '--offset-col', '2', '--preview'],
-    ['python3', 'excel_ir_cli.py', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_header_edit_preview.xlsx', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '999', '--as-number', '--preview'],
-    ['python3', 'excel_ir_cli.py', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_header_edit.xlsx', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '999', '--as-number'],
+    ['python3', 'excel_ir_cli.py', 'header-edit', 'ci_header.ir.json', 'ci_header_edit_preview.ir.json', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '999', '--as-number', '--preview'],
+    ['python3', 'excel_ir_cli.py', 'header-edit', 'ci_header.ir.json', 'ci_header_edit.ir.json', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '999', '--as-number'],
+    ['python3', 'excel_ir_cli.py', 'rebuild', 'ci_header_edit.ir.json', 'ci_header_edit.xlsx'],
 ]
 
 INSTALLED_COMMANDS = [
@@ -87,8 +89,10 @@ INSTALLED_COMMANDS = [
     ['excel-ir', 'anonymize', 'tests/fixtures/complex_report.xlsx', 'ci_installed_anonymized.xlsx'],
     ['excel-ir', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_installed_stream_edit.xlsx', '--match', '总计', '--value', '合计'],
     ['excel-ir', 'stream-edit', 'tests/fixtures/complex_report.xlsx', 'ci_installed_stream_edit_preview.xlsx', '--match', '业务线', '--value', '收入本月', '--offset-row', '1', '--offset-col', '2', '--preview'],
-    ['excel-ir', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_installed_header_edit.xlsx', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '999', '--as-number'],
-    ['excel-ir', 'header-edit', 'tests/fixtures/multi_header_dates.xlsx', 'ci_installed_header_regex_preview.xlsx', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '999', '--as-number', '--preview'],
+    ['excel-ir', 'parse', 'tests/fixtures/multi_header_dates.xlsx', 'ci_installed_header.ir.json'],
+    ['excel-ir', 'header-edit', 'ci_installed_header.ir.json', 'ci_installed_header_edit.ir.json', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '999', '--as-number'],
+    ['excel-ir', 'rebuild', 'ci_installed_header_edit.ir.json', 'ci_installed_header_edit.xlsx'],
+    ['excel-ir', 'header-edit', 'ci_installed_header.ir.json', 'ci_installed_header_regex_preview.ir.json', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '999', '--as-number', '--preview'],
 ]
 
 

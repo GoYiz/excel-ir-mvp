@@ -550,6 +550,208 @@ def _multi_header_rows_ws(ws: Any, header_start_col: int, header_end_col: int, m
     return rows
 
 
+def _sheet_by_name_or_first(ir: Dict[str, Any], sheet_name: Optional[str] = None) -> Dict[str, Any]:
+    sheets = ir.get("workbook", {}).get("sheets", [])
+    if not sheets:
+        raise ValueError("IR has no sheets")
+    if sheet_name is None:
+        return sheets[0]
+    for sheet in sheets:
+        if sheet.get("name") == sheet_name:
+            return sheet
+    raise KeyError(f"sheet not found in IR: {sheet_name}")
+
+
+def _ir_dimensions(sheet: Dict[str, Any]) -> Tuple[int, int]:
+    dims = sheet.get("dimensions", {})
+    max_row = int(dims.get("max_row") or 0)
+    max_col = int(dims.get("max_col") or 0)
+    for cdata in sheet.get("cells", {}).values():
+        max_row = max(max_row, int(cdata.get("row") or 0))
+        max_col = max(max_col, int(cdata.get("col") or 0))
+    return max_row, max_col
+
+
+def _ir_cell_coord(row: int, col: int) -> str:
+    return f"{get_column_letter(col)}{row}"
+
+
+def _ir_cell_value(sheet: Dict[str, Any], row: int, col: int) -> Any:
+    cell = sheet.get("cells", {}).get(_ir_cell_coord(row, col))
+    return cell.get("value") if cell else None
+
+
+def _ir_cell_value_with_merged(sheet: Dict[str, Any], row: int, col: int) -> Any:
+    coord = _ir_cell_coord(row, col)
+    cell = sheet.get("cells", {}).get(coord)
+    if cell is not None:
+        return cell.get("value")
+    for rng in sheet.get("merged_ranges", []) or []:
+        min_col, min_row, max_col, max_row = range_boundaries(str(rng))
+        if min_row <= row <= max_row and min_col <= col <= max_col:
+            anchor = sheet.get("cells", {}).get(_ir_cell_coord(min_row, min_col))
+            return anchor.get("value") if anchor else None
+    return None
+
+
+def _ir_cell_info(sheet: Dict[str, Any], row: int, col: int) -> Dict[str, Any]:
+    coord = _ir_cell_coord(row, col)
+    cdata = sheet.get("cells", {}).get(coord, {})
+    return {"sheet": sheet.get("name"), "coord": coord, "row": row, "col": col, "value": normalized_value(cdata.get("value"))}
+
+
+def _multi_header_columns_ir(sheet: Dict[str, Any], header_start_row: int, header_end_row: int, min_col: int = 1, max_col: Optional[int] = None, fill_blank: bool = True) -> List[Dict[str, Any]]:
+    if header_start_row < 1 or header_end_row < header_start_row:
+        raise ValueError("header rows must be a positive start:end range")
+    _, inferred_max_col = _ir_dimensions(sheet)
+    max_col = max_col or inferred_max_col
+    row_values: Dict[Tuple[int, int], Any] = {}
+    for r in range(header_start_row, header_end_row + 1):
+        carry = None
+        for c in range(min_col, max_col + 1):
+            value = _ir_cell_value_with_merged(sheet, r, c)
+            if _header_label(value):
+                carry = value
+            elif fill_blank and carry is not None:
+                value = carry
+            row_values[(r, c)] = value
+    columns: List[Dict[str, Any]] = []
+    for c in range(min_col, max_col + 1):
+        levels = [_header_label(row_values.get((r, c))) for r in range(header_start_row, header_end_row + 1)]
+        path = [x for x in levels if x]
+        columns.append({"col": c, "letter": get_column_letter(c), "levels": levels, "path": path})
+    return columns
+
+
+def _multi_header_rows_ir(sheet: Dict[str, Any], header_start_col: int, header_end_col: int, min_row: int = 1, max_row: Optional[int] = None, fill_blank: bool = True) -> List[Dict[str, Any]]:
+    if header_start_col < 1 or header_end_col < header_start_col:
+        raise ValueError("header columns must be a positive start:end range")
+    inferred_max_row, _ = _ir_dimensions(sheet)
+    max_row = max_row or inferred_max_row
+    col_values: Dict[Tuple[int, int], Any] = {}
+    for c in range(header_start_col, header_end_col + 1):
+        carry = None
+        for r in range(min_row, max_row + 1):
+            value = _ir_cell_value_with_merged(sheet, r, c)
+            if _header_label(value):
+                carry = value
+            elif fill_blank and carry is not None:
+                value = carry
+            col_values[(r, c)] = value
+    rows: List[Dict[str, Any]] = []
+    for r in range(min_row, max_row + 1):
+        levels = [_header_label(col_values.get((r, c))) for c in range(header_start_col, header_end_col + 1)]
+        path = [x for x in levels if x]
+        rows.append({"row": r, "levels": levels, "path": path})
+    return rows
+
+
+def multi_header_columns_ir(ir: Dict[str, Any], *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, min_col: int = 1, max_col: Optional[int] = None) -> Dict[str, Any]:
+    sheet_ir = _sheet_by_name_or_first(ir, sheet)
+    columns = _multi_header_columns_ir(sheet_ir, header_start_row, header_end_row, min_col=min_col, max_col=max_col)
+    return {"ok": True, "sheet": sheet_ir.get("name"), "header_rows": [header_start_row, header_end_row], "columns": columns}
+
+
+def multi_header_rows_ir(ir: Dict[str, Any], *, sheet: Optional[str] = None, header_start_col: int | str = 1, header_end_col: int | str = 3, min_row: int = 1, max_row: Optional[int] = None) -> Dict[str, Any]:
+    sheet_ir = _sheet_by_name_or_first(ir, sheet)
+    start_col = _col_index(header_start_col)
+    end_col = _col_index(header_end_col)
+    rows = _multi_header_rows_ir(sheet_ir, start_col, end_col, min_row=min_row, max_row=max_row)
+    return {"ok": True, "sheet": sheet_ir.get("name"), "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "rows": rows}
+
+
+def _locate_multi_header_cell_ir(sheet: Dict[str, Any], headers: List[Any], *, header_start_row: int, header_end_row: int, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, match_mode: str = "exact", orientation: str = "horizontal", header_start_col: int | str = 1, header_end_col: int | str = 3, col: Optional[int | str] = None, col_match: Any = None, col_match_row: int = 1, data_start_col: Optional[int | str] = None, min_row: int = 1, max_row: Optional[int] = None) -> Dict[str, Any]:
+    orientation = (orientation or "horizontal").strip().lower()
+    mode = _match_mode_alias(match_mode, contains=contains)
+    headers_payload = _selector_payload(headers)
+    ir_max_row, ir_max_col = _ir_dimensions(sheet)
+    if orientation in {"horizontal", "columns", "col", "x"}:
+        columns = _multi_header_columns_ir(sheet, header_start_row, header_end_row, min_col=min_col, max_col=max_col)
+        header_matches = [c for c in columns if _header_path_matches(c.get("path", []), headers, contains=False, case_sensitive=case_sensitive, match_mode=mode)]
+        if not header_matches:
+            return {"ok": False, "found": False, "stopped_reason": "header_not_found", "sheet": sheet.get("name"), "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "header_match_count": 0}
+        if header_match_index < 1 or header_match_index > len(header_matches):
+            return {"ok": False, "found": False, "stopped_reason": "header_match_index_out_of_range", "sheet": sheet.get("name"), "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "header_match_count": len(header_matches)}
+        column = header_matches[header_match_index - 1]
+        if row is None:
+            if row_match is None:
+                row = data_start_row or (header_end_row + 1)
+            else:
+                scan_col = _col_index(row_match_col)
+                start = data_start_row or (header_end_row + 1)
+                for r in range(start, ir_max_row + 1):
+                    value = _ir_cell_value_with_merged(sheet, r, scan_col)
+                    if _match_text(value, row_match, mode=mode, case_sensitive=case_sensitive):
+                        row = r
+                        break
+                if row is None:
+                    return {"ok": False, "found": False, "stopped_reason": "row_not_found", "sheet": sheet.get("name"), "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "column": column, "row_match": normalized_value(row_match), "row_match_col": get_column_letter(scan_col)}
+        target = _ir_cell_info(sheet, int(row), int(column["col"]))
+        return {"ok": True, "found": True, "sheet": sheet.get("name"), "headers": headers_payload, "header_rows": [header_start_row, header_end_row], "orientation": "horizontal", "match_mode": mode, "header_match_count": len(header_matches), "column": column, "row": row, "target": target}
+    if orientation in {"vertical", "rows", "row", "y"}:
+        start_col = _col_index(header_start_col)
+        end_col = _col_index(header_end_col)
+        rows = _multi_header_rows_ir(sheet, start_col, end_col, min_row=min_row, max_row=max_row)
+        header_matches = [r for r in rows if _header_path_matches(r.get("path", []), headers, contains=False, case_sensitive=case_sensitive, match_mode=mode)]
+        if not header_matches:
+            return {"ok": False, "found": False, "stopped_reason": "header_not_found", "sheet": sheet.get("name"), "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "header_match_count": 0}
+        if header_match_index < 1 or header_match_index > len(header_matches):
+            return {"ok": False, "found": False, "stopped_reason": "header_match_index_out_of_range", "sheet": sheet.get("name"), "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "header_match_count": len(header_matches)}
+        row_header = header_matches[header_match_index - 1]
+        target_col: Optional[int] = _col_index(col) if col is not None else None
+        if target_col is None:
+            if col_match is None:
+                target_col = _col_index(data_start_col) if data_start_col is not None else end_col + 1
+            else:
+                scan_row = int(col_match_row)
+                start = _col_index(data_start_col) if data_start_col is not None else end_col + 1
+                for c in range(start, ir_max_col + 1):
+                    value = _ir_cell_value_with_merged(sheet, scan_row, c)
+                    if _match_text(value, col_match, mode=mode, case_sensitive=case_sensitive):
+                        target_col = c
+                        break
+                if target_col is None:
+                    return {"ok": False, "found": False, "stopped_reason": "column_not_found", "sheet": sheet.get("name"), "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "row_header": row_header, "col_match": normalized_value(col_match), "col_match_row": scan_row}
+        target = _ir_cell_info(sheet, int(row_header["row"]), int(target_col))
+        return {"ok": True, "found": True, "sheet": sheet.get("name"), "headers": headers_payload, "header_cols": [get_column_letter(start_col), get_column_letter(end_col)], "orientation": "vertical", "match_mode": mode, "header_match_count": len(header_matches), "row_header": row_header, "row": row_header["row"], "col": target_col, "target": target}
+    raise ValueError("orientation must be horizontal or vertical")
+
+
+def locate_cell_by_multi_header_ir(ir: Dict[str, Any], headers: List[Any], *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, match_mode: str = "exact", orientation: str = "horizontal", header_start_col: int | str = 1, header_end_col: int | str = 3, col: Optional[int | str] = None, col_match: Any = None, col_match_row: int = 1, data_start_col: Optional[int | str] = None, min_row: int = 1, max_row: Optional[int] = None) -> Dict[str, Any]:
+    sheet_ir = _sheet_by_name_or_first(ir, sheet)
+    return _locate_multi_header_cell_ir(sheet_ir, headers, header_start_row=header_start_row, header_end_row=header_end_row, row=row, row_match=row_match, row_match_col=row_match_col, data_start_row=data_start_row, min_col=min_col, max_col=max_col, contains=contains, case_sensitive=case_sensitive, header_match_index=header_match_index, match_mode=match_mode, orientation=orientation, header_start_col=header_start_col, header_end_col=header_end_col, col=col, col_match=col_match, col_match_row=col_match_row, data_start_col=data_start_col, min_row=min_row, max_row=max_row)
+
+
+def update_cell_by_multi_header_ir(ir: Dict[str, Any], headers: List[Any], new_value: Any, *, sheet: Optional[str] = None, header_start_row: int = 1, header_end_row: int = 3, row: Optional[int] = None, row_match: Any = None, row_match_col: int | str = 1, data_start_row: Optional[int] = None, min_col: int = 1, max_col: Optional[int] = None, contains: bool = False, case_sensitive: bool = False, header_match_index: int = 1, match_mode: str = "exact", orientation: str = "horizontal", header_start_col: int | str = 1, header_end_col: int | str = 3, col: Optional[int | str] = None, col_match: Any = None, col_match_row: int = 1, data_start_col: Optional[int | str] = None, min_row: int = 1, max_row: Optional[int] = None, preview: bool = False) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    out_ir = copy.deepcopy(ir)
+    sheet_ir = _sheet_by_name_or_first(out_ir, sheet)
+    result = _locate_multi_header_cell_ir(sheet_ir, headers, header_start_row=header_start_row, header_end_row=header_end_row, row=row, row_match=row_match, row_match_col=row_match_col, data_start_row=data_start_row, min_col=min_col, max_col=max_col, contains=contains, case_sensitive=case_sensitive, header_match_index=header_match_index, match_mode=match_mode, orientation=orientation, header_start_col=header_start_col, header_end_col=header_end_col, col=col, col_match=col_match, col_match_row=col_match_row, data_start_col=data_start_col, min_row=min_row, max_row=max_row)
+    result.update({"preview": preview})
+    if not result.get("found"):
+        result["updated"] = False
+        return out_ir, result
+    target_col = int(result.get("col") or result.get("column", {}).get("col"))
+    target_row = int(result["row"])
+    coord = _ir_cell_coord(target_row, target_col)
+    cells = sheet_ir.setdefault("cells", {})
+    cdata = cells.setdefault(coord, {"row": target_row, "col": target_col})
+    old_value = cdata.get("value")
+    normalized_new = normalized_value(new_value)
+    change = {"old_value": normalized_value(old_value), "new_value": normalized_new, "target": _ir_cell_info(sheet_ir, target_row, target_col), "column": result.get("column"), "row_header": result.get("row_header")}
+    result.update({"old_value": change["old_value"], "new_value": change["new_value"], "change": change, "target_coord": coord, "updated": not preview})
+    if not preview:
+        cdata["value"] = normalized_new
+        if "row" not in cdata:
+            cdata["row"] = target_row
+        if "col" not in cdata:
+            cdata["col"] = target_col
+        dims = sheet_ir.setdefault("dimensions", {})
+        dims["max_row"] = max(int(dims.get("max_row") or 0), target_row)
+        dims["max_col"] = max(int(dims.get("max_col") or 0), target_col)
+        out_ir.setdefault("workbook", {}).setdefault("patch_history", []).append({"op": "header_edit", "sheet": sheet_ir.get("name"), "target": coord, "headers": _selector_payload(headers), "old_value": change["old_value"], "new_value": change["new_value"]})
+    return out_ir, result
+
+
 def multi_header_rows_xlsx(path: str, *, sheet: Optional[str] = None, header_start_col: int | str = 1, header_end_col: int | str = 3, min_row: int = 1, max_row: Optional[int] = None, engine: str | None = None) -> Dict[str, Any]:
     wb = _load_workbook(path, engine=engine, data_only=False)
     ws = wb[sheet] if sheet else wb.worksheets[0]

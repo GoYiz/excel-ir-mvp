@@ -81,10 +81,25 @@ def stream_edit(src: str | Path, dst: str | Path, *, match: Any, value: Any, opt
     return _xp.stream_update_first_match_xlsx(str(src), str(dst), match, value, **params)
 
 
-def header_edit(src: str | Path, dst: str | Path, *, headers: Sequence[Any], value: Any, options: HeaderEditOptions | None = None, **kwargs: Any) -> Dict[str, Any]:
-    """Edit a cell addressed by multi-level header path plus row selector."""
+def header_locate(ir: WorkbookIR, *, headers: Sequence[Any], options: HeaderEditOptions | None = None, **kwargs: Any) -> Dict[str, Any]:
+    """Locate a cell by multi-level headers inside an already parsed IR."""
     opts = options or HeaderEditOptions()
-    params = {
+    params = _header_params(opts)
+    params.update(kwargs)
+    return _xp.locate_cell_by_multi_header_ir(ir, list(headers), **params)
+
+
+def header_edit(ir: WorkbookIR, *, headers: Sequence[Any], value: Any, options: HeaderEditOptions | None = None, **kwargs: Any) -> tuple[WorkbookIR, Dict[str, Any]]:
+    """Edit a cell addressed by multi-level headers inside IR; rebuild separately."""
+    opts = options or HeaderEditOptions()
+    params = _header_params(opts)
+    params["preview"] = opts.preview
+    params.update(kwargs)
+    return _xp.update_cell_by_multi_header_ir(ir, list(headers), value, **params)
+
+
+def _header_params(opts: HeaderEditOptions) -> Dict[str, Any]:
+    return {
         "sheet": opts.sheet,
         "header_start_row": opts.header_start_row,
         "header_end_row": opts.header_end_row,
@@ -107,21 +122,17 @@ def header_edit(src: str | Path, dst: str | Path, *, headers: Sequence[Any], val
         "data_start_col": opts.data_start_col,
         "min_row": opts.min_row,
         "max_row": opts.max_row,
-        "preview": opts.preview,
-        "engine": opts.engine,
     }
-    params.update(kwargs)
-    return _xp.update_cell_by_multi_header_xlsx(str(src), str(dst), list(headers), value, **params)
 
 
-def header_columns(path: str | Path, *, sheet: str | None = None, header_rows: tuple[int, int] = (1, 3), engine: str = "openpyxl", min_col: int = 1, max_col: int | None = None) -> Dict[str, Any]:
-    """Expand merged/multi-row horizontal headers into per-column paths."""
-    return _xp.multi_header_columns_xlsx(str(path), sheet=sheet, header_start_row=header_rows[0], header_end_row=header_rows[1], min_col=min_col, max_col=max_col, engine=engine)
+def header_columns(ir: WorkbookIR, *, sheet: str | None = None, header_rows: tuple[int, int] = (1, 3), min_col: int = 1, max_col: int | None = None) -> Dict[str, Any]:
+    """Expand merged/multi-row horizontal headers from parsed IR."""
+    return _xp.multi_header_columns_ir(ir, sheet=sheet, header_start_row=header_rows[0], header_end_row=header_rows[1], min_col=min_col, max_col=max_col)
 
 
-def header_rows(path: str | Path, *, sheet: str | None = None, header_cols: tuple[int | str, int | str] = (1, 3), engine: str = "openpyxl", min_row: int = 1, max_row: int | None = None) -> Dict[str, Any]:
-    """Expand merged/multi-column vertical headers into per-row paths."""
-    return _xp.multi_header_rows_xlsx(str(path), sheet=sheet, header_start_col=header_cols[0], header_end_col=header_cols[1], min_row=min_row, max_row=max_row, engine=engine)
+def header_rows(ir: WorkbookIR, *, sheet: str | None = None, header_cols: tuple[int | str, int | str] = (1, 3), min_row: int = 1, max_row: int | None = None) -> Dict[str, Any]:
+    """Expand merged/multi-column vertical headers from parsed IR."""
+    return _xp.multi_header_rows_ir(ir, sheet=sheet, header_start_col=header_cols[0], header_end_col=header_cols[1], min_row=min_row, max_row=max_row)
 
 
 def anonymize(src: str | Path, dst: str | Path, *, rewrite_formulas: bool = False, engine: str = "openpyxl") -> Dict[str, Any]:

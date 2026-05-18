@@ -28,7 +28,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_package_import(self):
         import excel_ir_mvp
-        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a18')
+        self.assertEqual(excel_ir_mvp.__version__, '2.0.0a19')
         self.assertTrue(callable(excel_ir_mvp.parse))
         self.assertIn('openpyxl', excel_ir_mvp.available_engines())
         self.assertTrue(callable(excel_ir_mvp.parse))
@@ -405,7 +405,7 @@ class ExcelIRMVPTests(unittest.TestCase):
 
     def test_alpha14_multi_header_locate_and_edit(self):
         from openpyxl import Workbook, load_workbook
-        from excel_ir_mvp.excel_ir import multi_header_columns_xlsx, multi_header_rows_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx
+        from excel_ir_mvp.excel_ir import multi_header_columns_xlsx, multi_header_rows_xlsx, locate_cell_by_multi_header_xlsx, update_cell_by_multi_header_xlsx, multi_header_columns_ir, multi_header_rows_ir, locate_cell_by_multi_header_ir, update_cell_by_multi_header_ir
         path = ROOT / 'tests' / 'fixtures' / 'multi_header_dates.xlsx'
         wb = Workbook()
         ws = wb.active
@@ -421,9 +421,15 @@ class ExcelIRMVPTests(unittest.TestCase):
         ws['A5'] = '门店B'; ws['B5'] = 11; ws['C5'] = 21; ws['D5'] = 31; ws['E5'] = 41; ws['F5'] = 51; ws['G5'] = 61
         wb.save(path)
         cols = multi_header_columns_xlsx(str(path), sheet='日期表', header_start_row=1, header_end_row=3, min_col=2)['columns']
+        import excel_ir_mvp as xir
+        ir = xir.parse(path, include_extra=False, infer_logic=False)
+        ir_cols = multi_header_columns_ir(ir, sheet='日期表', header_start_row=1, header_end_row=3, min_col=2)['columns']
+        self.assertEqual(ir_cols[1]['path'], ['2026', '5', '8'])
         c_col = [c for c in cols if c['letter'] == 'C'][0]
         self.assertEqual(c_col['path'], ['2026', '5', '8'])
         located = locate_cell_by_multi_header_xlsx(str(path), ['2026', '5', '8'], sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A')
+        ir_located = locate_cell_by_multi_header_ir(ir, ['2026', '5', '8'], sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A')
+        self.assertEqual(ir_located['target']['coord'], 'C4')
         self.assertTrue(located['found'])
         self.assertEqual(located['target']['coord'], 'C4')
         preview = update_cell_by_multi_header_xlsx(str(path), str(ROOT / 'multi_header_preview.xlsx'), ['2026', '5', '8'], 999, sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A', preview=True)
@@ -432,15 +438,28 @@ class ExcelIRMVPTests(unittest.TestCase):
         self.assertEqual(preview['target_coord'], 'C4')
         out = ROOT / 'multi_header_edit.xlsx'
         result = update_cell_by_multi_header_xlsx(str(path), str(out), ['2026', '5', '8'], 999, sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A')
+        edited_ir, ir_result = update_cell_by_multi_header_ir(ir, ['2026', '5', '8'], 555, sheet='日期表', header_start_row=1, header_end_row=3, row_match='门店A')
+        self.assertTrue(ir_result['updated'])
+        self.assertEqual(edited_ir['workbook']['sheets'][0]['cells']['C4']['value'], 555)
+        ir_out = ROOT / 'multi_header_ir_rebuilt.xlsx'
+        xir.rebuild(edited_ir, ir_out)
+        self.assertEqual(load_workbook(ir_out)['日期表']['C4'].value, 555)
         self.assertTrue(result['updated'])
         self.assertEqual(load_workbook(out)['日期表']['C4'].value, 999)
         self.assertEqual(load_workbook(out)['日期表']['F4'].value, 50)
-        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(path), str(ROOT / 'multi_header_cli_preview.xlsx'), '--sheet', '日期表', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '888', '--as-number', '--preview'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'parse', str(path), str(ROOT / 'multi_header_cli.ir.json'), '--sheet', '日期表'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(ROOT / 'multi_header_cli.ir.json'), str(ROOT / 'multi_header_cli_preview.ir.json'), '--sheet', '日期表', '--headers', '2026/5/8', '--row-match', '门店A', '--value', '888', '--as-number', '--preview'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         cli_data = json.loads(p.stdout)
         self.assertTrue(cli_data['preview'])
         self.assertEqual(cli_data['target_coord'], 'C4')
-        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(path), str(ROOT / 'multi_header_cli_edit.xlsx'), '--sheet', '日期表', '--headers', '["2026","5","8"]', '--row-match', '门店A', '--value', '777', '--as-number'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-locate', str(ROOT / 'multi_header_cli.ir.json'), '--sheet', '日期表', '--headers', '2026/5/8', '--row-match', '门店A'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        self.assertEqual(json.loads(p.stdout)['target']['coord'], 'C4')
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(ROOT / 'multi_header_cli.ir.json'), str(ROOT / 'multi_header_cli_edit.ir.json'), '--sheet', '日期表', '--headers', '["2026","5","8"]', '--row-match', '门店A', '--value', '777', '--as-number'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'rebuild', str(ROOT / 'multi_header_cli_edit.ir.json'), str(ROOT / 'multi_header_cli_edit.xlsx')], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         self.assertEqual(load_workbook(ROOT / 'multi_header_cli_edit.xlsx')['日期表']['C4'].value, 777)
         default_located = locate_cell_by_multi_header_xlsx(str(path), ['2026', '5', '8'], sheet='日期表', header_start_row=1, header_end_row=3)
@@ -461,16 +480,25 @@ class ExcelIRMVPTests(unittest.TestCase):
         vws['C2'] = 100; vws['D2'] = 110; vws['C3'] = 120; vws['D3'] = 130; vws['C5'] = 60; vws['D5'] = 70
         vwb.save(vpath)
         rows = multi_header_rows_xlsx(str(vpath), sheet='纵向表', header_start_col='A', header_end_col='B', min_row=2)['rows']
+        vir = xir.parse(vpath, include_extra=False, infer_logic=False)
+        ir_rows = multi_header_rows_ir(vir, sheet='纵向表', header_start_col='A', header_end_col='B', min_row=2)['rows']
+        self.assertEqual([r for r in ir_rows if r['row'] == 3][0]['path'], ['收入', '线下'])
         self.assertEqual([r for r in rows if r['row'] == 3][0]['path'], ['收入', '线下'])
         vloc = locate_cell_by_multi_header_xlsx(str(vpath), ['收入', '线*'], sheet='纵向表', orientation='vertical', header_start_col='A', header_end_col='B', min_row=2, match_mode='wildcard', header_match_index=2)
+        ir_vloc = locate_cell_by_multi_header_ir(vir, ['收入', '线*'], sheet='纵向表', orientation='vertical', header_start_col='A', header_end_col='B', min_row=2, match_mode='wildcard', header_match_index=2)
+        self.assertEqual(ir_vloc['target']['coord'], 'C3')
         self.assertEqual(vloc['target']['coord'], 'C3')
         vedit = update_cell_by_multi_header_xlsx(str(vpath), str(ROOT / 'multi_header_vertical_edit.xlsx'), ['收入', '线下'], 999, sheet='纵向表', orientation='vertical', header_start_col='A', header_end_col='B', min_row=2, col_match='Q2')
         self.assertTrue(vedit['updated'])
         self.assertEqual(load_workbook(ROOT / 'multi_header_vertical_edit.xlsx')['纵向表']['D3'].value, 999)
-        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(path), str(ROOT / 'multi_header_cli_regex.xlsx'), '--sheet', '日期表', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '666', '--as-number', '--preview'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(ROOT / 'multi_header_cli.ir.json'), str(ROOT / 'multi_header_cli_regex.ir.json'), '--sheet', '日期表', '--headers', '202[0-9]/5/8', '--match-mode', 'regex', '--value', '666', '--as-number', '--preview'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         self.assertEqual(json.loads(p.stdout)['target_coord'], 'C4')
-        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(vpath), str(ROOT / 'multi_header_cli_vertical.xlsx'), '--sheet', '纵向表', '--orientation', 'vertical', '--header-cols', 'A:B', '--min-row', '2', '--headers', '收入/线下', '--col-match', 'Q2', '--value', '888', '--as-number'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'parse', str(vpath), str(ROOT / 'multi_header_vertical.ir.json'), '--sheet', '纵向表'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'header-edit', str(ROOT / 'multi_header_vertical.ir.json'), str(ROOT / 'multi_header_cli_vertical.ir.json'), '--sheet', '纵向表', '--orientation', 'vertical', '--header-cols', 'A:B', '--min-row', '2', '--headers', '收入/线下', '--col-match', 'Q2', '--value', '888', '--as-number'], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
+        p = subprocess.run(['python3', 'excel_ir_cli.py', 'rebuild', str(ROOT / 'multi_header_cli_vertical.ir.json'), str(ROOT / 'multi_header_cli_vertical.xlsx')], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertEqual(p.returncode, 0, msg=p.stderr + p.stdout)
         self.assertEqual(load_workbook(ROOT / 'multi_header_cli_vertical.xlsx')['纵向表']['D3'].value, 888)
 
@@ -525,10 +553,14 @@ class ExcelIRMVPTests(unittest.TestCase):
         preview = xir.stream_edit(src, ROOT / 'alpha16_stream_preview.xlsx', match='业务线', value='收入本月', options=xir.StreamEditOptions(offset_row=1, offset_col=2, preview=True))
         self.assertFalse(preview['updated'])
         self.assertEqual(preview['target_coord'], 'C6')
-        header_preview = xir.header_edit(fixture_path('multi_header_dates.xlsx'), ROOT / 'alpha16_header_preview.xlsx', headers=['2026', '5', '8'], value=123, options=xir.HeaderEditOptions(row_match='门店A', preview=True))
+        header_ir = xir.parse(fixture_path('multi_header_dates.xlsx'), include_extra=False, infer_logic=False)
+        header_preview = xir.header_locate(header_ir, headers=['2026', '5', '8'], options=xir.HeaderEditOptions(row_match='门店A', preview=True))
         self.assertTrue(header_preview['found'])
-        self.assertEqual(header_preview['target_coord'], 'C4')
-        rows_info = xir.header_rows(ROOT / 'multi_header_vertical.xlsx', sheet='纵向表', header_cols=('A', 'B'), min_row=2)
+        self.assertEqual(header_preview['target']['coord'], 'C4')
+        edited_header_ir, edit_result = xir.header_edit(header_ir, headers=['2026', '5', '8'], value=123, options=xir.HeaderEditOptions(row_match='门店A'))
+        self.assertTrue(edit_result['updated'])
+        self.assertEqual(edited_header_ir['workbook']['sheets'][0]['cells']['C4']['value'], 123)
+        rows_info = xir.header_rows(vir if 'vir' in locals() else xir.parse(ROOT / 'multi_header_vertical.xlsx', include_extra=False, infer_logic=False), sheet='纵向表', header_cols=('A', 'B'), min_row=2)
         self.assertTrue(rows_info['ok'])
     def test_alpha17_fast_parse_profile_and_no_legacy_top_level_api(self):
         import excel_ir_mvp as xir
